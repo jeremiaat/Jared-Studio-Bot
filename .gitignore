@@ -1,0 +1,10 @@
+# Exclude Python environment and package files
+__pycache__/
+*.pyc
+venv/
+tg-bot/  # Your virtual environment folder
+
+# Exclude sensitive data
+.env
+config.py
+*TOKEN*
