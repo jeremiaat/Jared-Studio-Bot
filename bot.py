@@ -162,7 +162,7 @@ async def navigate_drawings(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # --- Main bot setup ---
 def main():
-    if TOKEN == "YOUR_BOT_TOKEN":
+    if TOKEN is None:
         print("ERROR: Please replace 'YOUR_BOT_TOKEN' with your actual bot token.")
         return
 
