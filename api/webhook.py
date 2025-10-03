@@ -1,13 +1,13 @@
 import os
 import asyncio
-from flask import Flask, request, Response
-from http import HTTPStatus
+from fastapi import FastAPI, Request
+from starlette.responses import Response
 from telegram import Update, InputMediaPhoto, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes
 from telegram.error import TelegramError
 
-# --- Flask app ---
-app = Flask(__name__)
+# --- FastAPI app ---
+app = FastAPI()
 
 # --- Config ---
 TOKEN = os.environ.get("BOT_TOKEN")
@@ -16,9 +16,9 @@ if not TOKEN:
 
 CHANNEL_USERNAME = "@Jaredrawing"
 CHANNEL_URL = "https://t.me/Jaredrawing"
-VERCEL_DOMAIN = os.environ.get("VERCEL_URL", "your-vercel-domain.vercel.app")
 
-# --- Publicly hosted drawings (must be accessible online) ---
+# --- Publicly hosted drawings ---
+VERCEL_DOMAIN = "jared-studio-bot.vercel.app"
 drawings = [
     {
         "category": "Realistic Drawing",
@@ -39,7 +39,7 @@ drawings = [
         "price": "2000-2300 ETB",
         "size": "A3",
         "description": "A realistic drawing in A3 paper with frame",
-        "image": f"https://{VERCEL_DOMAIN}/images/3.jpg"
+        "image": f"https://{VERCEL_DOMAIN}/images/1.jpg"
     }
 ]
 
@@ -121,7 +121,7 @@ async def navigate_drawings(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except Exception:
         await query.edit_message_text(caption, reply_markup=reply_markup, parse_mode="Markdown")
 
-# --- Async processing for Vercel ---
+# --- Async update processor ---
 async def process_update_async(update_json):
     try:
         application = Application.builder().token(TOKEN).build()
@@ -133,15 +133,15 @@ async def process_update_async(update_json):
     except Exception as e:
         print(f"[async process error]: {e}", flush=True)
 
-# --- Flask Webhook ---
-@app.route("/", methods=["POST"])
-def webhook():
+# --- FastAPI Webhook ---
+@app.post("/")
+async def webhook(request: Request):
     try:
-        update_json = request.get_json(force=True)
+        update_json = await request.json()
         print(f"[webhook received]: {update_json}", flush=True)
-        # Return 200 immediately
+        # Immediately return 200 to Telegram
         asyncio.create_task(process_update_async(update_json))
-        return Response("OK", status=HTTPStatus.OK)
+        return Response("OK", status_code=200)
     except Exception as e:
         print(f"[webhook error]: {e}", flush=True)
-        return Response("OK, but error processing update", status=HTTPStatus.OK)
+        return Response("OK, but error processing update", status_code=200)
