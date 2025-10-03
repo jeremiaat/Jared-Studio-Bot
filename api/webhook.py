@@ -11,11 +11,14 @@ app = Flask(__name__)
 
 # --- Config ---
 TOKEN = os.environ.get("BOT_TOKEN")
+if not TOKEN:
+    raise RuntimeError("BOT_TOKEN not set in environment variables!")
+
 CHANNEL_USERNAME = "@Jaredrawing"
 CHANNEL_URL = "https://t.me/Jaredrawing"
 VERCEL_DOMAIN = os.environ.get("VERCEL_URL", "your-vercel-domain.vercel.app")
 
-# --- Drawings list (public URLs) ---
+# --- Publicly hosted drawings (must be accessible online) ---
 drawings = [
     {
         "category": "Realistic Drawing",
@@ -40,7 +43,7 @@ drawings = [
     }
 ]
 
-# --- Helper to generate message ---
+# --- Helper function ---
 def get_drawing_message(drawing, index):
     caption = (
         f"🎨 *Category:* {drawing['category']}\n\n"
@@ -96,7 +99,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except TelegramError:
         await show_member_options(update)
     except Exception as e:
-        print(f"Error in start: {e}")
+        print(f"[start handler error]: {e}", flush=True)
         await show_member_options(update)
 
 async def navigate_drawings(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -118,22 +121,27 @@ async def navigate_drawings(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except Exception:
         await query.edit_message_text(caption, reply_markup=reply_markup, parse_mode="Markdown")
 
+# --- Async processing for Vercel ---
+async def process_update_async(update_json):
+    try:
+        application = Application.builder().token(TOKEN).build()
+        application.add_handler(CommandHandler("start", start))
+        application.add_handler(CallbackQueryHandler(navigate_drawings, pattern="^nav_"))
+
+        update = Update.de_json(update_json, application.bot)
+        await application.process_update(update)
+    except Exception as e:
+        print(f"[async process error]: {e}", flush=True)
+
 # --- Flask Webhook ---
 @app.route("/", methods=["POST"])
 def webhook():
-    if TOKEN is None:
-        return Response("Bot token not set", status=HTTPStatus.INTERNAL_SERVER_ERROR)
-
-    application = Application.builder().token(TOKEN).build()
-    application.add_handler(CommandHandler("start", start))
-    application.add_handler(CallbackQueryHandler(navigate_drawings, pattern="^nav_"))
-
     try:
         update_json = request.get_json(force=True)
-        update = Update.de_json(update_json, application.bot)
-        asyncio.run(application.process_update(update))
+        print(f"[webhook received]: {update_json}", flush=True)
+        # Return 200 immediately
+        asyncio.create_task(process_update_async(update_json))
+        return Response("OK", status=HTTPStatus.OK)
     except Exception as e:
-        print(f"Error processing update: {e}")
+        print(f"[webhook error]: {e}", flush=True)
         return Response("OK, but error processing update", status=HTTPStatus.OK)
-
-    return Response("OK", status=HTTPStatus.OK)
