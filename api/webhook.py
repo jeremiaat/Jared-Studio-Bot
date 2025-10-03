@@ -6,61 +6,60 @@ from telegram import Update, InputMediaPhoto, InlineKeyboardButton, InlineKeyboa
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes
 from telegram.error import TelegramError
 
+# --- Flask app ---
 app = Flask(__name__)
 
 # --- Config ---
 TOKEN = os.environ.get("BOT_TOKEN")
 CHANNEL_USERNAME = "@Jaredrawing"
 CHANNEL_URL = "https://t.me/Jaredrawing"
+VERCEL_DOMAIN = os.environ.get("VERCEL_URL", "your-vercel-domain.vercel.app")
 
-# --- Drawings list (hosted as public URLs) ---
-VERCEL_DOMAIN = os.environ.get("VERCEL_URL", "your-vercel-default-domain.vercel.app")
+# --- Drawings list (public URLs) ---
 drawings = [
     {
         "category": "Realistic Drawing",
         "price": "400-600 ETB",
         "size": "A4",
         "description": "A detailed realistic drawing on A4 paper without frame",
-        "image": f"https://{jared-studio-bot.vercel.app/}/images/1.jpg"
+        "image": f"https://{VERCEL_DOMAIN}/images/1.jpg"
     },
     {
         "category": "Realistic Drawing",
         "price": "1000-1400 ETB",
         "size": "A4",
         "description": "A realistic drawing in A4 paper with frame",
-        "image": f"https://{jared-studio-bot.vercel.app/}/images/2.jpg"
+        "image": f"https://{VERCEL_DOMAIN}/images/2.jpg"
     },
     {
         "category": "Realistic Drawing",
         "price": "2000-2300 ETB",
         "size": "A3",
         "description": "A realistic drawing in A3 paper with frame",
-        "image": f"https://{jared-studio-bot.vercel.app/}/images/3.jpg"
+        "image": f"https://{VERCEL_DOMAIN}/images/3.jpg"
     }
 ]
 
-# --- Helpers ---
-def get_drawing_message(drawing_data, index):
+# --- Helper to generate message ---
+def get_drawing_message(drawing, index):
     caption = (
-        f"🎨 *Category:* {drawing_data['category']}\n\n"
-        f"📝 *Description:* {drawing_data['description']}\n"
-        f"📏 *Size:* {drawing_data['size']}\n"
-        f"💰 *Price:* {drawing_data['price']}\n\n"
+        f"🎨 *Category:* {drawing['category']}\n\n"
+        f"📝 *Description:* {drawing['description']}\n"
+        f"📏 *Size:* {drawing['size']}\n"
+        f"💰 *Price:* {drawing['price']}\n\n"
         f"Page {index + 1} of {len(drawings)}"
     )
 
     keyboard = []
     nav_buttons = []
-
     if index > 0:
         nav_buttons.append(InlineKeyboardButton("⬅️ Back", callback_data=f"nav_{index-1}"))
     if index < len(drawings) - 1:
         nav_buttons.append(InlineKeyboardButton("➡️ Next", callback_data=f"nav_{index+1}"))
     if nav_buttons:
         keyboard.append(nav_buttons)
-
     keyboard.append([InlineKeyboardButton("Order Now", url="https://t.me/Ja_r_ed")])
-    return drawing_data["image"], caption, InlineKeyboardMarkup(keyboard)
+    return drawing["image"], caption, InlineKeyboardMarkup(keyboard)
 
 # --- Command Handlers ---
 async def ask_to_join(update: Update):
@@ -68,10 +67,9 @@ async def ask_to_join(update: Update):
         [InlineKeyboardButton("Join Channel", url=CHANNEL_URL)],
         [InlineKeyboardButton("View Price List", callback_data="nav_0")]
     ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
     await update.effective_chat.send_message(
         "Please join our channel to view the full price list.",
-        reply_markup=reply_markup
+        reply_markup=InlineKeyboardMarkup(keyboard)
     )
 
 async def show_member_options(update: Update):
@@ -79,8 +77,10 @@ async def show_member_options(update: Update):
         [InlineKeyboardButton("View Price List", callback_data="nav_0")],
         [InlineKeyboardButton("Order Now", url="https://t.me/Ja_r_ed")]
     ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    await update.effective_chat.send_message("Welcome! What would you like to do?", reply_markup=reply_markup)
+    await update.effective_chat.send_message(
+        "Welcome! What would you like to do?",
+        reply_markup=InlineKeyboardMarkup(keyboard)
+    )
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     bot = context.application.bot
@@ -96,7 +96,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except TelegramError:
         await show_member_options(update)
     except Exception as e:
-        print(f"Error in start handler: {e}")
+        print(f"Error in start: {e}")
         await show_member_options(update)
 
 async def navigate_drawings(update: Update, context: ContextTypes.DEFAULT_TYPE):
