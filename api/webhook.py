@@ -17,8 +17,8 @@ if not TOKEN:
 CHANNEL_USERNAME = "@Jaredrawing"
 CHANNEL_URL = "https://t.me/Jaredrawing"
 
-# --- Hosted drawings ---
 VERCEL_DOMAIN = "jared-studio-bot.vercel.app"
+
 drawings = [
     {
         "category": "Realistic Drawing",
@@ -43,13 +43,10 @@ drawings = [
     }
 ]
 
-# --- Telegram Bot Application (global instance) ---
-application = Application.builder().token(TOKEN).build()
-
-# --- Helper function ---
+# --- Helper ---
 def get_drawing_message(drawing, index):
     caption = (
-        f"🎨 *Category:* {drawing['category']}\n"
+        f"🎨 *Category:* {drawing['category']}\n\n"
         f"📝 *Description:* {drawing['description']}\n"
         f"📏 *Size:* {drawing['size']}\n"
         f"💰 *Price:* {drawing['price']}\n\n"
@@ -68,7 +65,7 @@ def get_drawing_message(drawing, index):
     return drawing["image"], caption, InlineKeyboardMarkup(keyboard)
 
 # --- Command Handlers ---
-async def ask_to_join(update: Update):
+async def ask_to_join(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [
         [InlineKeyboardButton("Join Channel", url=CHANNEL_URL)],
         [InlineKeyboardButton("View Price List", callback_data="nav_0")]
@@ -78,7 +75,7 @@ async def ask_to_join(update: Update):
         reply_markup=InlineKeyboardMarkup(keyboard)
     )
 
-async def show_member_options(update: Update):
+async def show_member_options(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [
         [InlineKeyboardButton("View Price List", callback_data="nav_0")],
         [InlineKeyboardButton("Order Now", url="https://t.me/Ja_r_ed")]
@@ -96,14 +93,14 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         member = await bot.get_chat_member(CHANNEL_USERNAME, user.id)
         if member.status in ["member", "administrator", "creator"]:
-            await show_member_options(update)
+            await show_member_options(update, context)
         else:
-            await ask_to_join(update)
+            await ask_to_join(update, context)
     except TelegramError:
-        await show_member_options(update)
+        await show_member_options(update, context)
     except Exception as e:
         print(f"[start handler error]: {e}", flush=True)
-        await show_member_options(update)
+        await show_member_options(update, context)
 
 async def navigate_drawings(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
@@ -118,18 +115,18 @@ async def navigate_drawings(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     image_url, caption, reply_markup = get_drawing_message(drawings[index], index)
-    media = InputMediaPhoto(media=image_url, caption=caption, parse_mode="MarkdownV2")
+    media = InputMediaPhoto(media=image_url, caption=caption, parse_mode="Markdown")
     try:
         await query.edit_message_media(media=media, reply_markup=reply_markup)
-    except Exception as e:
-        print(f"[navigate_drawings error]: {e}", flush=True)
-        await query.edit_message_text(caption, reply_markup=reply_markup, parse_mode="MarkdownV2")
+    except Exception:
+        await query.edit_message_text(caption, reply_markup=reply_markup, parse_mode="Markdown")
 
-# --- Add handlers to the global application ---
+# --- Telegram Application ---
+application = Application.builder().token(TOKEN).build()
 application.add_handler(CommandHandler("start", start))
 application.add_handler(CallbackQueryHandler(navigate_drawings, pattern="^nav_"))
 
-# --- Async update processor ---
+# --- Async update processor for webhook ---
 async def process_update_async(update_json):
     try:
         update = Update.de_json(update_json, application.bot)
@@ -137,12 +134,11 @@ async def process_update_async(update_json):
     except Exception as e:
         print(f"[async process error]: {e}", flush=True)
 
-# --- FastAPI Webhook ---
+# --- FastAPI webhook ---
 @app.post("/")
 async def webhook(request: Request):
     try:
         update_json = await request.json()
-        print(f"[webhook received]: {update_json}", flush=True)
         asyncio.create_task(process_update_async(update_json))
         return Response("OK", status_code=200)
     except Exception as e:
