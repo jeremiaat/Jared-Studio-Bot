@@ -17,7 +17,7 @@ if not TOKEN:
 CHANNEL_USERNAME = "@Jaredrawing"
 CHANNEL_URL = "https://t.me/Jaredrawing"
 
-# --- Publicly hosted drawings ---
+# --- Hosted drawings ---
 VERCEL_DOMAIN = "jared-studio-bot.vercel.app"
 drawings = [
     {
@@ -43,10 +43,13 @@ drawings = [
     }
 ]
 
+# --- Telegram Bot Application (global instance) ---
+application = Application.builder().token(TOKEN).build()
+
 # --- Helper function ---
 def get_drawing_message(drawing, index):
     caption = (
-        f"🎨 *Category:* {drawing['category']}\n\n"
+        f"🎨 *Category:* {drawing['category']}\n"
         f"📝 *Description:* {drawing['description']}\n"
         f"📏 *Size:* {drawing['size']}\n"
         f"💰 *Price:* {drawing['price']}\n\n"
@@ -115,19 +118,20 @@ async def navigate_drawings(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     image_url, caption, reply_markup = get_drawing_message(drawings[index], index)
-    media = InputMediaPhoto(media=image_url, caption=caption, parse_mode="Markdown")
+    media = InputMediaPhoto(media=image_url, caption=caption, parse_mode="MarkdownV2")
     try:
         await query.edit_message_media(media=media, reply_markup=reply_markup)
-    except Exception:
-        await query.edit_message_text(caption, reply_markup=reply_markup, parse_mode="Markdown")
+    except Exception as e:
+        print(f"[navigate_drawings error]: {e}", flush=True)
+        await query.edit_message_text(caption, reply_markup=reply_markup, parse_mode="MarkdownV2")
+
+# --- Add handlers to the global application ---
+application.add_handler(CommandHandler("start", start))
+application.add_handler(CallbackQueryHandler(navigate_drawings, pattern="^nav_"))
 
 # --- Async update processor ---
 async def process_update_async(update_json):
     try:
-        application = Application.builder().token(TOKEN).build()
-        application.add_handler(CommandHandler("start", start))
-        application.add_handler(CallbackQueryHandler(navigate_drawings, pattern="^nav_"))
-
         update = Update.de_json(update_json, application.bot)
         await application.process_update(update)
     except Exception as e:
@@ -139,7 +143,6 @@ async def webhook(request: Request):
     try:
         update_json = await request.json()
         print(f"[webhook received]: {update_json}", flush=True)
-        # Immediately return 200 to Telegram
         asyncio.create_task(process_update_async(update_json))
         return Response("OK", status_code=200)
     except Exception as e:
