@@ -1,78 +1,3 @@
-A Telegram bot for Jared Drawing Studio that showcases artwork and handles customer inquiries.
-
-## Features
-
-- Channel membership verification
-- Interactive price list with image navigation
-- Order placement functionality
-
-## Setup
-
-### Prerequisites
-
-- Python 3.8 or higher
-- Telegram Bot Token (get from [@BotFather](https://t.me/botfather))
-
-### Installation
-
-1. Clone the repository:
-```bash
-git clone <repository-url>
-cd jared-drawing-bot
-```
-
-2. Create a virtual environment:
-```bash
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-```
-
-3. Install dependencies:
-```bash
-pip install -r requirements.txt
-```
-
-4. Create a `.env` file and add your bot token:
-```
-BOT_TOKEN=your_telegram_bot_token_here
-```
-
-## Usage
-
-### Local Development
-
-Run the bot locally:
-```bash
-python bot.py
-```
-
-### Deployment
-
-#### Heroku
-
-1. Create a new Heroku app
-2. Set the environment variable `BOT_TOKEN` in Heroku dashboard
-3. Deploy using Heroku CLI:
-```bash
-heroku create your-app-name
-git push heroku main
-```
-
-#### Railway
-
-1. Connect your GitHub repository to Railway
-2. Add the `BOT_TOKEN` environment variable in Railway dashboard
-3. Deploy automatically
-
-## Bot Commands
-
-- `/start` - Initialize the bot and check channel membership
-- Interactive buttons for navigation and ordering
-
-## License
-
-MIT License
-=======
 # Jared Drawing Studio Telegram Bot
 
 A Telegram bot for Jared Drawing Studio that showcases artwork and handles customer inquiries.
@@ -159,6 +84,22 @@ git push heroku main
 1. Connect your GitHub repository to Railway
 2. Add the `BOT_TOKEN` environment variable in Railway dashboard
 3. Deploy automatically
+
+#### Render
+
+1. Connect your GitHub repository to Render
+2. Create a new service and select "Background Worker" (not "Web Service")
+3. Set the build command: `pip install -r requirements.txt`
+4. Set the start command: `python bot.py`
+5. Add the `BOT_TOKEN` environment variable in Render dashboard
+6. Deploy
+
+Alternatively, if using `render.yaml` for configuration:
+1. Ensure `render.yaml` is in your repository root
+2. Connect your GitHub repository to Render
+3. Render will automatically detect the configuration
+4. Add the `BOT_TOKEN` environment variable in Render dashboard
+5. Deploy
 
 #### Other Platforms
 
