@@ -5,15 +5,24 @@ from drawings import drawings, get_drawing_message
 async def navigate_drawings(update, context):
     """Handle navigation between drawings"""
     query = update.callback_query
-    await query.answer()
-    
+
+    # Answer the query immediately to avoid timeout
+    try:
+        await query.answer()
+    except Exception as e:
+        print(f"Query answer failed (likely timeout): {e}")
+        return
+
     # Extract index from callback data (format: "nav_0", "nav_1", etc.)
     try:
         index = int(query.data.split('_')[1])
         await show_drawing(update, context, index)
     except (IndexError, ValueError) as e:
         print(f"Error parsing callback data: {query.data} - {e}")
-        await query.answer("Navigation error", show_alert=True)
+        try:
+            await query.answer("Navigation error", show_alert=True)
+        except Exception as e2:
+            print(f"Failed to show navigation error: {e2}")
 
 async def show_drawing(update, context, index):
     """Show a specific drawing"""
@@ -37,7 +46,13 @@ async def show_drawing(update, context, index):
 async def main_menu(update, context):
     """Return to main menu"""
     query = update.callback_query
-    await query.answer()
+
+    # Answer the query immediately to avoid timeout
+    try:
+        await query.answer()
+    except Exception as e:
+        print(f"Query answer failed in main_menu (likely timeout): {e}")
+        return
 
     user = query.from_user
     bot = context.application.bot
@@ -85,4 +100,7 @@ async def main_menu(update, context):
 
     except Exception as e:
         print(f"Error in main_menu: {e}")
-        await query.answer("Error returning to main menu", show_alert=True)
+        try:
+            await query.answer("Error returning to main menu", show_alert=True)
+        except Exception as e2:
+            print(f"Failed to show main menu error: {e2}")
