@@ -1,0 +1,9 @@
+services:
+  - type: worker
+    name: jared-drawing-bot
+    runtime: python3
+    buildCommand: pip install -r requirements.txt
+    startCommand: python bot.py
+    envVars:
+      - key: BOT_TOKEN
+        sync: false  # Set this in Render dashboard
