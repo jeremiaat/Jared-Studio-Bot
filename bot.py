@@ -2,6 +2,9 @@
 from dotenv import load_dotenv
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler
 import os
+import threading
+import http.server
+import socketserver
 
 load_dotenv()
 
@@ -25,11 +28,41 @@ except Exception:
     update_price_handler = None
     add_catalogue_handler = None
 
+def _start_dummy_http_server():
+    """Start a tiny HTTP server in a daemon thread to bind PORT (for Render web services)."""
+    port_raw = os.getenv("PORT") or os.getenv("RENDER_PORT") or "8080"
+    try:
+        port = int(port_raw)
+    except Exception:
+        port = 8080
+
+    class _Handler(http.server.SimpleHTTPRequestHandler):
+        def do_GET(self):
+            self.send_response(200)
+            self.send_header("Content-Type", "text/plain; charset=utf-8")
+            self.end_headers()
+            self.wfile.write(b"OK")
+
+        # quiet logging
+        def log_message(self, format, *args):
+            return
+
+    def _serve():
+        with socketserver.TCPServer(("0.0.0.0", port), _Handler) as httpd:
+            print(f"Dummy HTTP server listening on 0.0.0.0:{port}")
+            httpd.serve_forever()
+
+    t = threading.Thread(target=_serve, daemon=True)
+    t.start()
+
 def main():
     BOT_TOKEN = os.getenv('BOT_TOKEN')
     if not BOT_TOKEN:
         print("Error: BOT_TOKEN not found in environment variables")
         return
+
+    # Start the dummy server so Render's port scan detects an open port.
+    _start_dummy_http_server()
 
     application = Application.builder().token(BOT_TOKEN).build()
 

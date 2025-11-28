@@ -2,7 +2,15 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMa
 from telegram.error import BadRequest
 from telegram.ext import ConversationHandler, CallbackQueryHandler, MessageHandler, CommandHandler, filters
 from telegram.constants import ParseMode
-from config import ORDER_CONTACT_CHAT_ID, ORDER_CONTACT_USERNAME
+# ensure config values are loaded whether your code imports the package or the module
+try:
+    from config import ORDER_CONTACT_CHAT_ID, ORDER_CONTACT_USERNAME
+except Exception:
+    try:
+        from config.config import ORDER_CONTACT_CHAT_ID, ORDER_CONTACT_USERNAME
+    except Exception:
+        ORDER_CONTACT_CHAT_ID = None
+        ORDER_CONTACT_USERNAME = None
 from utils.helpers import is_creator
 import html, os, json
 
@@ -236,9 +244,20 @@ async def show_order_confirmation(update, context):
 
     return CONFIRM
 
+def _parse_chat_id(v):
+    if v is None:
+        return None
+    try:
+        return int(v)
+    except Exception:
+        try:
+            return int(str(v).strip())
+        except Exception:
+            return None
+
 async def confirm_order(update, context):
-    """Show order confirmation and send order to contact"""
-    query = update.callback_query
+    """Show order confirmation to user and send order data to ORDER_CONTACT_CHAT_ID."""
+    query = getattr(update, "callback_query", None)
     if query:
         try:
             await query.answer()
@@ -246,54 +265,51 @@ async def confirm_order(update, context):
             pass
 
     order = context.user_data.get('order', {})
-    bot = context.application.bot
     user = update.effective_user
+    bot = context.application.bot
 
-    description_text = f"\n📝 Description: {order.get('description')}" if order.get('description') else ""
+    # Prepare human-friendly order text (use HTML to preserve underscores)
+    desc = order.get('description') or "—"
+    username = f"@{user.username}" if user and user.username else (user.full_name if user else "Unknown")
+    order_lines = [
+        "🆕 <b>New Order Received</b>",
+        f"👤 <b>Customer:</b> {username} (id: {getattr(user,'id', 'unknown')})",
+        f"📏 <b>Size:</b> {order.get('size','')}",
+        f"🖼️ <b>Frame:</b> {order.get('frame','')}",
+        f"⏰ <b>Delivery Time:</b> {order.get('delivery_time','')}",
+        f"📍 <b>Location:</b> {order.get('location','')}",
+        f"📝 <b>Description:</b> {desc}",
+    ]
+    order_message = "\n".join(order_lines)
 
-    # Send order details to contact chat if configured
-    if ORDER_CONTACT_CHAT_ID:
+    # Send to configured contact chat id (if available)
+    contact_chat_id = _parse_chat_id(ORDER_CONTACT_CHAT_ID)
+    if contact_chat_id:
         try:
-            order_message = (
-                "🆕 New Order Received\n\n"
-                f"Customer: @{user.username or user.full_name} (id: {user.id})\n"
-                f"Size: {order.get('size','')}\n"
-                f"Frame: {order.get('frame','')}\n"
-                f"Delivery Time: {order.get('delivery_time','')}\n"
-                f"Location: {order.get('location','')}{description_text}\n"
-            )
-            await bot.send_message(chat_id=ORDER_CONTACT_CHAT_ID, text=order_message)
-            if order.get('photo_file_id'):
-                await bot.send_photo(chat_id=ORDER_CONTACT_CHAT_ID, photo=order['photo_file_id'], caption="Order photo")
+            await bot.send_message(chat_id=contact_chat_id, text=order_message, parse_mode=ParseMode.HTML)
+            # send photo if provided
+            photo_id = order.get('photo_file_id')
+            if photo_id:
+                try:
+                    await bot.send_photo(chat_id=contact_chat_id, photo=photo_id, caption=f"Photo for order from {username}")
+                except Exception as e:
+                    print(f"Failed to send order photo to contact: {e}")
         except Exception as e:
-            print(f"Failed to send order to contact: {e}")
+            print(f"Failed to send order to contact ({contact_chat_id}): {e}")
+    else:
+        print("ORDER_CONTACT_CHAT_ID not configured or invalid; order not forwarded to contact.")
 
-    # Save order locally
-    try:
-        orders = []
-        if os.path.exists(ORDERS_FILE):
-            with open(ORDERS_FILE, 'r', encoding='utf-8') as f:
-                orders = json.load(f)
-        orders.append({
-            "user_id": user.id,
-            "username": user.username,
-            "order": order
-        })
-        with open(ORDERS_FILE, 'w', encoding='utf-8') as f:
-            json.dump(orders, f, ensure_ascii=False, indent=2)
-    except Exception as e:
-        print(f"Failed to save order: {e}")
-
-    # Send confirmation to the user; preserve underscores in contact username using HTML
-    safe_contact = html.escape(ORDER_CONTACT_USERNAME or "")
+    # Continue with existing confirmation to user (keep original behavior)
+    safe_contact = (ORDER_CONTACT_USERNAME or "the artist")
     confirm_text = (
-        "✅ Order placed successfully!\n\n"
-        f"Size: {order.get('size','')}\n"
-        f"Frame: {order.get('frame','')}\n"
-        f"Delivery Time: {order.get('delivery_time','')}\n"
-        f"Location: {order.get('location','')}\n"
-        f"{('Description: ' + order.get('description') + '\\n') if order.get('description') else ''}"
-        f"\nContact the artist: <code>{safe_contact}</code>"
+        "✅ <b>Order placed successfully!</b>\n\n"
+        f"📏 <b>Size:</b> {order.get('size','')}\n"
+        f"🖼️ <b>Frame:</b> {order.get('frame','')}\n"
+        f"⏰ <b>Delivery Time:</b> {order.get('delivery_time','')}\n"
+        f"📍 <b>Location:</b> {order.get('location','')}\n"
+        f"📝 <b>Description:</b> {desc}\n\n"
+        f"📞 Contact: <code>{html.escape(safe_contact)}</code>\n\n"
+        "Please contact the artist above to discuss payment and final details."
     )
 
     keyboard = [[InlineKeyboardButton("🏠 Main Menu", callback_data="main_menu")]]
@@ -301,11 +317,15 @@ async def confirm_order(update, context):
     try:
         if query and query.message:
             await query.message.reply_text(confirm_text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode=ParseMode.HTML)
+        elif update.message:
+            await update.message.reply_text(confirm_text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode=ParseMode.HTML)
         else:
-            await update.effective_message.reply_text(confirm_text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode=ParseMode.HTML)
+            await bot.send_message(chat_id=update.effective_chat.id, text=confirm_text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode=ParseMode.HTML)
     except Exception as e:
         print(f"Failed to send confirmation to user: {e}")
 
+    # clear conversation data if desired
+    context.user_data.pop('order', None)
     return ConversationHandler.END
 
 async def cancel_order(update, context):

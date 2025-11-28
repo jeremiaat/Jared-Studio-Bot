@@ -206,7 +206,7 @@ view_orders_handler = ConversationHandler(
         ],
     },
     fallbacks=[CallbackQueryHandler(back_to_orders, pattern="^main_menu$")],
-    per_message=True,  # <- set this to avoid the PTBUserWarning and ensure callbacks are tracked
+    per_user=True,  # use per_user (or per_chat) because we mix CallbackQueryHandler and message handlers
 )
 
 update_price_handler = CallbackQueryHandler(manage_prices, pattern="^manage_prices$")
