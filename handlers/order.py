@@ -2,7 +2,7 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMa
 from telegram.error import BadRequest
 from telegram.ext import ConversationHandler, CallbackQueryHandler, MessageHandler, CommandHandler, filters
 from telegram.constants import ParseMode
-from config.config import ORDER_CONTACT_CHAT_ID, ORDER_CONTACT_USERNAME
+from config import ORDER_CONTACT_CHAT_ID, ORDER_CONTACT_USERNAME
 from utils.helpers import is_creator
 import html, os, json
 
@@ -343,10 +343,10 @@ order_conversation = ConversationHandler(
         ],
         CONFIRM: [
             CallbackQueryHandler(confirm_order, pattern="^confirm_order$"),
-            CallbackQueryHandler(cancel_order, pattern="^cancel_order$"),
+            CallbackQueryHandler(cancel_order, pattern="^cancel_order$")
         ],
     },
     fallbacks=[CommandHandler("cancel", cancel_order)],
     allow_reentry=True,
-    per_message=False,
+    per_user=True  # use per_user (or per_chat) so MessageHandler + CallbackQueryHandler can coexist
 )
