@@ -1,28 +1,33 @@
+# TODO: Fix Deployment Error and Improve Project Structure
 
-# TODO: Add Role-Based Functionality to Jared_Studi_Bot
+## Phase 1: Fix Import Errors
+- [ ] Add __init__.py to root directory
+- [ ] Add __init__.py to handlers/ directory
+- [ ] Add __init__.py to utils/ directory
+- [ ] Change absolute imports to relative imports in handlers/start.py
+- [ ] Change absolute imports to relative imports in handlers/order.py
+- [ ] Change absolute imports to relative imports in utils/helpers.py
+- [ ] Test local run of bot.py to ensure imports work
 
-- [x] Implement role-based access control (Creator vs Users)
-- [x] Add creator identification via user ID
-- [x] Create role-appropriate menus (Creator: management options, Users: ordering options)
-- [x] Prevent creators from placing orders
-- [x] Add storage for orders and prices (JSON files)
-- [x] Create creator management handlers (view_orders, update_price, add_catalogue)
-- [x] Update drawings.py to load prices from storage
-- [x] Remove main menu button from order confirmation
-- [x] Update bot.py to include new handlers
-- [x] Test role-based functionality
-- [x] Add role checks to all handlers to prevent unauthorized access
-- [x] Prevent creators from viewing price list
+## Phase 2: Improve Project Structure and Code Quality
+- [ ] Move config.py to config/ directory and make it a package
+- [ ] Rename files for clarity (e.g., handlers/start.py to handlers/start_handler.py if needed)
+- [ ] Add type hints to all functions
+- [ ] Add comprehensive docstrings to all functions and classes
+- [ ] Improve error handling with try-except blocks and logging
+- [ ] Refactor long functions into smaller, reusable ones
+- [ ] Add constants file for magic strings and numbers
 
-# TODO: Implement Role-Based Functionality
+## Phase 3: Enhance User Experience in Bot
+- [ ] Update welcome message in start handler for better clarity
+- [ ] Improve button labels and descriptions
+- [ ] Add more emojis and formatting to messages
+- [ ] Enhance order confirmation messages
+- [ ] Add help command and improve navigation
+- [ ] Make messages more concise and user-friendly
 
-- [x] Add creator user ID to config.py
-- [x] Create utils/helpers.py with role checking function
-- [x] Create storage files: orders.json and prices.json
-- [x] Modify handlers/start.py for role-appropriate menus
-- [x] Modify handlers/order.py to prevent creators from ordering
-- [x] Create handlers/creator.py for view_orders, update_price, add_catalogue
-- [x] Update bot.py to add creator handlers
-- [x] Update drawings.py to load prices from storage
-- [x] Remove main menu button from order successful message
-- [x] Test role-based functionality
+## Phase 4: Testing and Deployment
+- [ ] Test all bot functionalities locally
+- [ ] Update README.md with improved documentation
+- [ ] Ensure all requirements are in requirements.txt
+- [ ] Deploy to Render and verify no errors

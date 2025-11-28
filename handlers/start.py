@@ -1,7 +1,7 @@
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.error import TelegramError
 from telegram.constants import ParseMode
-from config import CREATOR_USER_ID
+from config.config import CREATOR_USER_ID
 from utils.helpers import is_creator
 
 # Detect whether management handlers exist (so we only show the button when functional)

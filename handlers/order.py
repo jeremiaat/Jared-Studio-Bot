@@ -2,7 +2,7 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMa
 from telegram.error import BadRequest
 from telegram.ext import ConversationHandler, CallbackQueryHandler, MessageHandler, CommandHandler, filters
 from telegram.constants import ParseMode
-from config import ORDER_CONTACT_CHAT_ID, ORDER_CONTACT_USERNAME
+from config.config import ORDER_CONTACT_CHAT_ID, ORDER_CONTACT_USERNAME
 from utils.helpers import is_creator
 import html, os, json
 

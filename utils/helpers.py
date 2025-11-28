@@ -2,7 +2,7 @@ from typing import Optional, Any
 
 # Import creator config values if present
 try:
-    from config import CREATOR_USER_ID, CREATOR_USER_IDS, CREATOR_USERNAMES
+    from config.config import CREATOR_USER_ID, CREATOR_USER_IDS, CREATOR_USERNAMES
 except Exception:
     CREATOR_USER_ID = None
     CREATOR_USER_IDS = None
