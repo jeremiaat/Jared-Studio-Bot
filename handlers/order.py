@@ -2,15 +2,8 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMa
 from telegram.error import BadRequest
 from telegram.ext import ConversationHandler, CallbackQueryHandler, MessageHandler, CommandHandler, filters
 from telegram.constants import ParseMode
-# ensure config values are loaded whether your code imports the package or the module
-try:
-    from config import ORDER_CONTACT_CHAT_ID, ORDER_CONTACT_USERNAME
-except Exception:
-    try:
-        from config.config import ORDER_CONTACT_CHAT_ID, ORDER_CONTACT_USERNAME
-    except Exception:
-        ORDER_CONTACT_CHAT_ID = None
-        ORDER_CONTACT_USERNAME = None
+# Import config values directly. Ensure your bot is run from the project root.
+from config import ORDER_CONTACT_CHAT_ID, ORDER_CONTACT_USERNAME, CREATOR_USER_ID
 from utils.helpers import is_creator
 import html, os, json
 
@@ -43,13 +36,41 @@ async def start_order(update, context):
     user = update.effective_user
 
     # Check if user is creator
-    if is_creator(user.id):
+    try:
+        if is_creator(user.id):
+            await query.edit_message_text(
+                "🎨 As the creator, you cannot place orders.\n\n"
+                "Use the management options to view orders and manage your studio.",
+                reply_markup=InlineKeyboardMarkup([
+                    [InlineKeyboardButton("🏠 Main Menu", callback_data="main_menu")]
+                ])
+            )
+            return ConversationHandler.END
+    except Exception as e:
+        print(f"[DEBUG] Error in start_order creator check: {e}")
+        # Fallback to prevent creators from ordering even if check fails
+        return ConversationHandler.END
+
+    # Check channel membership for non-creators
+    bot = context.application.bot
+    try:
+        member = await bot.get_chat_member("@Jaredrawing", user.id)
+        is_member = member.status in ["member", "administrator", "creator"]
+    except Exception as e:
+        print(f"Membership check failed: {e}")
+        is_member = False
+
+    if not is_member:
+        join_url = "https://t.me/Jaredrawing"
+        keyboard = [
+            [InlineKeyboardButton("Join Channel", url=join_url)],
+            [InlineKeyboardButton("Check Membership", callback_data="check_membership_order")],
+            [InlineKeyboardButton("🏠 Main Menu", callback_data="main_menu")]
+        ]
         await query.edit_message_text(
-            "🎨 As the creator, you cannot place orders.\n\n"
-            "Use the management options to view orders and manage your studio.",
-            reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton("🏠 Main Menu", callback_data="main_menu")]
-            ])
+            "ℹ️ You must be a member of @Jaredrawing to place orders.\n\n"
+            "Please join the channel first:",
+            reply_markup=InlineKeyboardMarkup(keyboard)
         )
         return ConversationHandler.END
 
@@ -232,12 +253,12 @@ async def show_order_confirmation(update, context):
     # Prefer replying in the same context (message or callback)
     try:
         query = getattr(update, "callback_query", None)
-        if query and query.message:
-            await query.message.reply_text(message_text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode=ParseMode.MARKDOWN)
-        elif update.message:
+        if update.message:
             await update.message.reply_text(message_text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode=ParseMode.MARKDOWN)
+        elif query and query.message:
+            await query.edit_message_text(message_text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode=ParseMode.MARKDOWN)
         else:
-            await context.application.bot.send_message(chat_id=update.effective_chat.id, text=message_text,
+            await context.bot.send_message(chat_id=update.effective_chat.id, text=message_text,
                                                       reply_markup=InlineKeyboardMarkup(keyboard), parse_mode=ParseMode.MARKDOWN)
     except Exception as e:
         print(f"show_order_confirmation error: {e}")
@@ -282,44 +303,41 @@ async def confirm_order(update, context):
     ]
     order_message = "\n".join(order_lines)
 
-    # Send to configured contact chat id (if available)
-    contact_chat_id = _parse_chat_id(ORDER_CONTACT_CHAT_ID)
-    if contact_chat_id:
+    # Send to the creator's chat ID (which is the contact ID)
+    creator_chat_id = _parse_chat_id(CREATOR_USER_ID)
+    if creator_chat_id:
+        photo_id = order.get('photo_file_id')
         try:
-            await bot.send_message(chat_id=contact_chat_id, text=order_message, parse_mode=ParseMode.HTML)
-            # send photo if provided
-            photo_id = order.get('photo_file_id')
             if photo_id:
-                try:
-                    await bot.send_photo(chat_id=contact_chat_id, photo=photo_id, caption=f"Photo for order from {username}")
-                except Exception as e:
-                    print(f"Failed to send order photo to contact: {e}")
+                # If there's a photo, send it with the order details in the caption
+                await bot.send_photo(chat_id=creator_chat_id, photo=photo_id, caption=order_message, parse_mode=ParseMode.HTML)
+            else:
+                # Otherwise, send the order details as a text message
+                await bot.send_message(chat_id=creator_chat_id, text=order_message, parse_mode=ParseMode.HTML)
         except Exception as e:
-            print(f"Failed to send order to contact ({contact_chat_id}): {e}")
+            print(f"Failed to send order to creator ({creator_chat_id}): {e}")
     else:
-        print("ORDER_CONTACT_CHAT_ID not configured or invalid; order not forwarded to contact.")
+        print("CREATOR_USER_ID not configured or invalid; order not forwarded.")
 
     # Continue with existing confirmation to user (keep original behavior)
-    safe_contact = (ORDER_CONTACT_USERNAME or "the artist")
+    safe_contact_username = "Ja_r_ed"
     confirm_text = (
         "✅ <b>Order placed successfully!</b>\n\n"
         f"📏 <b>Size:</b> {order.get('size','')}\n"
         f"🖼️ <b>Frame:</b> {order.get('frame','')}\n"
         f"⏰ <b>Delivery Time:</b> {order.get('delivery_time','')}\n"
         f"📍 <b>Location:</b> {order.get('location','')}\n"
-        f"📝 <b>Description:</b> {desc}\n\n"
-        f"📞 Contact: <code>{html.escape(safe_contact)}</code>\n\n"
-        "Please contact the artist above to discuss payment and final details."
+        f"📝 <b>Description:</b> {html.escape(desc)}\n\n"
+        f"📞 Please contact <a href=\"https://t.me/{safe_contact_username}\">@{safe_contact_username}</a> to discuss payment and final details."
     )
 
     keyboard = [[InlineKeyboardButton("🏠 Main Menu", callback_data="main_menu")]]
 
     try:
+        # Update the original "Order Summary" message to show the final confirmation
         if query and query.message:
-            await query.message.reply_text(confirm_text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode=ParseMode.HTML)
-        elif update.message:
-            await update.message.reply_text(confirm_text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode=ParseMode.HTML)
-        else:
+            await query.edit_message_text(confirm_text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode=ParseMode.HTML)
+        else: # Fallback for other contexts
             await bot.send_message(chat_id=update.effective_chat.id, text=confirm_text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode=ParseMode.HTML)
     except Exception as e:
         print(f"Failed to send confirmation to user: {e}")
@@ -368,5 +386,6 @@ order_conversation = ConversationHandler(
     },
     fallbacks=[CommandHandler("cancel", cancel_order)],
     allow_reentry=True,
+    per_message=False,  # Set to False to allow MessageHandler in conversation states
     per_user=True  # use per_user (or per_chat) so MessageHandler + CallbackQueryHandler can coexist
 )

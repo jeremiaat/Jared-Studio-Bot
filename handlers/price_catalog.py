@@ -10,9 +10,41 @@ async def list_prices(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
     user = query.from_user if query else update.effective_user
 
     # Check if user is creator - creators cannot view price list
-    if is_creator(user):
-        target = query.message if query else update.effective_message
-        await target.reply_text("Access denied. Creators cannot view the price list.")
+    try:
+        if is_creator(user):
+            target = query.message if query else update.effective_message
+            await target.reply_text("Access denied. Creators cannot view the price list.")
+            return
+    except Exception as e:
+        print(f"[DEBUG] Error in list_prices creator check: {e}")
+        return # Block access if check fails
+
+    # Check channel membership for non-creators
+    bot = context.application.bot
+    try:
+        member = await bot.get_chat_member("@Jaredrawing", user.id)
+        is_member = member.status in ["member", "administrator", "creator"]
+    except Exception as e:
+        print(f"Membership check failed: {e}")
+        is_member = False
+
+    if not is_member:
+        join_url = "https://t.me/Jaredrawing"
+        # Simplified keyboard for non-members
+        keyboard = [
+            [InlineKeyboardButton("Join Channel", url=join_url)],
+            [InlineKeyboardButton("I Joined ✅", callback_data="price_list")]
+        ]
+        # Edit the message to prompt the user to join
+        await query.message.edit_text(
+            "ℹ️ You must be a member of @Jaredrawing to view prices.\n\n"
+            "Please join the channel first:",
+            reply_markup=InlineKeyboardMarkup(keyboard)
+        )
+        if query:
+            try:
+                await query.answer()
+            except Exception: pass
         return
 
     if query:
@@ -38,9 +70,13 @@ async def show_price_detail(update: Update, context: ContextTypes.DEFAULT_TYPE) 
     user = query.from_user
 
     # Check if user is creator - creators cannot view price list
-    if is_creator(user):
-        await query.edit_message_text("Access denied. Creators cannot view the price list.")
-        return
+    try:
+        if is_creator(user):
+            await query.edit_message_text("Access denied. Creators cannot view the price list.")
+            return
+    except Exception as e:
+        print(f"[DEBUG] Error in show_price_detail creator check: {e}")
+        return # Block access if check fails
 
     # Check membership for non-creators
     bot = context.application.bot
@@ -53,9 +89,10 @@ async def show_price_detail(update: Update, context: ContextTypes.DEFAULT_TYPE) 
 
     if not is_member:
         join_url = "https://t.me/Jaredrawing"
+        data = query.data or ""
         keyboard = [
             [InlineKeyboardButton("Join Channel", url=join_url)],
-            [InlineKeyboardButton("🏠 Main Menu", callback_data="main_menu")]
+            [InlineKeyboardButton("I Joined ✅", callback_data=data)]
         ]
         await query.edit_message_text(
             "ℹ️ You must be a member of @Jaredrawing to view prices.\n\n"

@@ -43,21 +43,26 @@ async def start_view_orders(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     # Check if user is creator
     if not is_creator(user):
-        await target.reply_text("Access denied. This feature is for creators only.")
+        if query:
+            await query.edit_message_text("Access denied. This feature is for creators only.")
+        else:
+            await target.reply_text("Access denied. This feature is for creators only.")
         return ConversationHandler.END
 
     orders = _load_orders()
     if not orders:
-        await target.reply_text("No orders found.")
-        return ConversationHandler.END
+        # Update the message to show that no orders were found, with a back button.
+        keyboard = [[InlineKeyboardButton("⬅️ Back to Menu", callback_data="main_menu")]]
+        await target.edit_text("No orders found.", reply_markup=InlineKeyboardMarkup(keyboard))
+        return
 
     buttons = []
     for i, o in enumerate(orders):
-        label = f"{i+1}. @{o.get('username') or o.get('user_id')}"
+        label = f"Order #{i+1} - @{o.get('username') or o.get('user_id')}"
         buttons.append([InlineKeyboardButton(label, callback_data=f"view_order_{i}")])
-
+    
     buttons.append([InlineKeyboardButton("🏠 Main Menu", callback_data="main_menu")])
-    await target.reply_text("Select an order to view:", reply_markup=InlineKeyboardMarkup(buttons))
+    await target.edit_text("Select an order to view:", reply_markup=InlineKeyboardMarkup(buttons))
     return STATE_LIST
 
 
@@ -99,14 +104,8 @@ async def show_order_detail(update: Update, context: ContextTypes.DEFAULT_TYPE):
         [InlineKeyboardButton("⬅️ Back to list", callback_data="back_to_orders")],
         [InlineKeyboardButton("🏠 Main Menu", callback_data="main_menu")]
     ]
-    try:
-        await query.message.reply_text(text, reply_markup=InlineKeyboardMarkup(kb))
-        await query.edit_message_text(f"Viewing order #{idx+1}")
-    except Exception:
-        try:
-            await query.edit_message_text(text, reply_markup=InlineKeyboardMarkup(kb))
-        except Exception:
-            pass
+    # Update the message to show the order details
+    await query.edit_message_text(text, reply_markup=InlineKeyboardMarkup(kb))
     return STATE_DETAIL
 
 
@@ -129,15 +128,9 @@ async def delete_order(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if 0 <= idx < len(orders):
         removed = orders.pop(idx)
         _save_orders(orders)
-        try:
-            await query.message.reply_text(f"Deleted order from @{removed.get('username') or removed.get('user_id')}.")
-        except Exception:
-            pass
+        await query.answer(f"Deleted order from @{removed.get('username') or removed.get('user_id')}.")
     else:
-        try:
-            await query.message.reply_text("Order index out of range.")
-        except Exception:
-            pass
+        await query.answer("Order index out of range.")
 
     # show updated list
     return await start_view_orders(update, context)
@@ -165,11 +158,10 @@ async def manage_prices(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if query:
         try:
             await query.answer()
+            # Update the message instead of sending a new one
+            await query.edit_message_text("Price management not implemented yet.", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Back to Menu", callback_data="main_menu")]]))
         except Exception:
             pass
-        await query.message.reply_text("Price management not implemented yet.")
-    else:
-        await update.effective_message.reply_text("Price management not implemented yet.")
 
 
 async def add_catalogue(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -185,11 +177,10 @@ async def add_catalogue(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if query:
         try:
             await query.answer()
+            # Update the message instead of sending a new one
+            await query.edit_message_text("Add catalogue flow not implemented yet.", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Back to Menu", callback_data="main_menu")]]))
         except Exception:
             pass
-        await query.message.reply_text("Add catalogue flow not implemented yet.")
-    else:
-        await update.effective_message.reply_text("Add catalogue flow not implemented yet.")
 
 
 # Export handlers for bot.py to register
@@ -206,6 +197,7 @@ view_orders_handler = ConversationHandler(
         ],
     },
     fallbacks=[CallbackQueryHandler(back_to_orders, pattern="^main_menu$")],
+    per_message=True,  # Changed to True to fix PTB warning
     per_user=True,  # use per_user (or per_chat) because we mix CallbackQueryHandler and message handlers
 )
 

@@ -6,5 +6,6 @@ tg-bot/  # Your virtual environment folder
 
 # Exclude sensitive data
 .env
+.env.local
 config.py
 *TOKEN*

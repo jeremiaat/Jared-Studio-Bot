@@ -1,33 +1,19 @@
-# TODO: Fix Deployment Error and Improve Project Structure
+# TODO: Prepare for Deployment and Verify Order Sending
 
 ## Phase 1: Fix Import Errors
-- [ ] Add __init__.py to root directory
-- [ ] Add __init__.py to handlers/ directory
-- [ ] Add __init__.py to utils/ directory
-- [ ] Change absolute imports to relative imports in handlers/start.py
-- [ ] Change absolute imports to relative imports in handlers/order.py
-- [ ] Change absolute imports to relative imports in utils/helpers.py
-- [ ] Test local run of bot.py to ensure imports work
+- [x] Change absolute imports to relative imports in handlers/start.py
+- [x] Change absolute imports to relative imports in handlers/order.py
+- [x] Change absolute imports to relative imports in utils/helpers.py
+- [x] Test local run of bot.py to ensure imports work
 
-## Phase 2: Improve Project Structure and Code Quality
-- [ ] Move config.py to config/ directory and make it a package
-- [ ] Rename files for clarity (e.g., handlers/start.py to handlers/start_handler.py if needed)
-- [ ] Add type hints to all functions
-- [ ] Add comprehensive docstrings to all functions and classes
-- [ ] Improve error handling with try-except blocks and logging
-- [ ] Refactor long functions into smaller, reusable ones
-- [ ] Add constants file for magic strings and numbers
+## Phase 2: Verify Order Sending to Creator
+- [x] Check that ORDER_CONTACT_CHAT_ID in config/config.py is correct
+- [x] Add logging to confirm_order function to verify order sending
+- [x] Test order placement and confirm notification is sent to creator
 
-## Phase 3: Enhance User Experience in Bot
-- [ ] Update welcome message in start handler for better clarity
-- [ ] Improve button labels and descriptions
-- [ ] Add more emojis and formatting to messages
-- [ ] Enhance order confirmation messages
-- [ ] Add help command and improve navigation
-- [ ] Make messages more concise and user-friendly
-
-## Phase 4: Testing and Deployment
-- [ ] Test all bot functionalities locally
-- [ ] Update README.md with improved documentation
-- [ ] Ensure all requirements are in requirements.txt
-- [ ] Deploy to Render and verify no errors
+## Phase 3: Final Deployment Checks
+- [x] Fix PTB warnings in ConversationHandlers
+- [x] Ensure role checking for creators (manage orders/pricelist)
+- [x] Ensure all requirements are in requirements.txt
+- [x] Update README.md if needed
+- [x] Deploy to Render and verify no errors

@@ -6,11 +6,12 @@ import threading
 import http.server
 import socketserver
 
+# Load environment variables from .env file for production
 load_dotenv()
 
 # known handlers
-from handlers.start import start
-from handlers.navigation import navigate_drawings, main_menu
+from handlers.start import start, back_to_main_menu
+from handlers.start import check_membership, check_membership_order
 from handlers.order import order_conversation
 
 # optional handlers (import if present)
@@ -68,8 +69,7 @@ def main():
 
     # core handlers
     application.add_handler(CommandHandler("start", start))
-    application.add_handler(CallbackQueryHandler(navigate_drawings, pattern="^nav_"))
-    application.add_handler(CallbackQueryHandler(main_menu, pattern="^main_menu$"))
+    application.add_handler(CallbackQueryHandler(back_to_main_menu, pattern="^main_menu$"))
     application.add_handler(order_conversation)
 
     # register price handlers if available
