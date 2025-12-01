@@ -37,6 +37,7 @@ application = Application.builder().token(BOT_TOKEN).build()
 # core handlers
 application.add_handler(CommandHandler("start", start))
 application.add_handler(CallbackQueryHandler(back_to_main_menu, pattern="^main_menu$"))
+application.add_handler(CallbackQueryHandler(check_membership, pattern="^check_membership$"))
 application.add_handler(order_conversation)
 
 # register price handlers if available
