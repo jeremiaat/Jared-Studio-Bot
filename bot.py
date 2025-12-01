@@ -1,6 +1,6 @@
 # bot.py
 from dotenv import load_dotenv
-from telegram.ext import Application, CommandHandler, CallbackQueryHandler
+from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ConversationHandler
 import os
 import threading
 
@@ -8,7 +8,7 @@ import threading
 load_dotenv()
 
 # known handlers
-from handlers.start import start, back_to_main_menu
+from handlers.start import start, main_menu_handler
 from handlers.start import check_membership, check_membership_order
 from handlers.order import order_conversation
 
@@ -36,15 +36,25 @@ application = Application.builder().token(BOT_TOKEN).build()
 
 # core handlers
 application.add_handler(CommandHandler("start", start))
-application.add_handler(CallbackQueryHandler(back_to_main_menu, pattern="^main_menu$"))
+application.add_handler(main_menu_handler)
 application.add_handler(CallbackQueryHandler(check_membership, pattern="^check_membership$"))
 application.add_handler(order_conversation)
 
 # register price handlers if available
 if list_prices and show_price_detail:
-    application.add_handler(CommandHandler("prices", list_prices))
-    application.add_handler(CallbackQueryHandler(list_prices, pattern="^price_list$"))
-    application.add_handler(CallbackQueryHandler(show_price_detail, pattern="^price_"))
+    price_list_conversation = ConversationHandler(
+        entry_points=[
+            CommandHandler("prices", list_prices),
+            CallbackQueryHandler(list_prices, pattern="^price_list$"),
+        ],
+        states={
+            # Assuming show_price_detail is a state. Add more states if needed.
+            "SHOW_DETAIL": [CallbackQueryHandler(show_price_detail, pattern="^price_")],
+        },
+        fallbacks=[main_menu_handler],
+        map_to_parent={ConversationHandler.END: ConversationHandler.END}
+    )
+    application.add_handler(price_list_conversation)
 
 # register management handlers if available
 if view_orders_handler:
