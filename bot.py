@@ -29,6 +29,32 @@ except Exception:
     update_price_handler = None
     add_catalogue_handler = None
 
+BOT_TOKEN = os.getenv('BOT_TOKEN')
+if not BOT_TOKEN:
+    print("Error: BOT_TOKEN not found in environment variables")
+    exit(1)
+
+application = Application.builder().token(BOT_TOKEN).build()
+
+# core handlers
+application.add_handler(CommandHandler("start", start))
+application.add_handler(CallbackQueryHandler(back_to_main_menu, pattern="^main_menu$"))
+application.add_handler(order_conversation)
+
+# register price handlers if available
+if list_prices and show_price_detail:
+    application.add_handler(CommandHandler("prices", list_prices))
+    application.add_handler(CallbackQueryHandler(list_prices, pattern="^price_list$"))
+    application.add_handler(CallbackQueryHandler(show_price_detail, pattern="^price_"))
+
+# register management handlers if available
+if view_orders_handler:
+    application.add_handler(view_orders_handler)
+if update_price_handler:
+    application.add_handler(update_price_handler)
+if add_catalogue_handler:
+    application.add_handler(add_catalogue_handler)
+
 def _start_dummy_http_server():
     """Start a tiny HTTP server in a daemon thread to bind PORT (for Render web services)."""
     port_raw = os.getenv("PORT") or os.getenv("RENDER_PORT") or "8080"
@@ -57,34 +83,8 @@ def _start_dummy_http_server():
     t.start()
 
 def main():
-    BOT_TOKEN = os.getenv('BOT_TOKEN')
-    if not BOT_TOKEN:
-        print("Error: BOT_TOKEN not found in environment variables")
-        return
-
     # Start the dummy server so Render's port scan detects an open port.
     _start_dummy_http_server()
-
-    application = Application.builder().token(BOT_TOKEN).build()
-
-    # core handlers
-    application.add_handler(CommandHandler("start", start))
-    application.add_handler(CallbackQueryHandler(back_to_main_menu, pattern="^main_menu$"))
-    application.add_handler(order_conversation)
-
-    # register price handlers if available
-    if list_prices and show_price_detail:
-        application.add_handler(CommandHandler("prices", list_prices))
-        application.add_handler(CallbackQueryHandler(list_prices, pattern="^price_list$"))
-        application.add_handler(CallbackQueryHandler(show_price_detail, pattern="^price_"))
-
-    # register management handlers if available
-    if view_orders_handler:
-        application.add_handler(view_orders_handler)
-    if update_price_handler:
-        application.add_handler(update_price_handler)
-    if add_catalogue_handler:
-        application.add_handler(add_catalogue_handler)
 
     print("Bot is running...")
     application.run_polling()
