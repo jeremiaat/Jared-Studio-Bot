@@ -9,6 +9,13 @@ import telegram
 from bot import application
 
 
+async def handle_update(body):
+    """Asynchronously initialize the application, process the update, and shut down."""
+    await application.initialize()
+    update = telegram.Update.de_json(json.loads(body), application.bot)
+    await application.process_update(update)
+    await application.shutdown()
+
 class handler(BaseHTTPRequestHandler):
     def do_POST(self):
         """
@@ -19,10 +26,9 @@ class handler(BaseHTTPRequestHandler):
             content_length = int(self.headers["Content-Length"])
             body = self.rfile.read(content_length)
             
-            # Parse the update and process it
-            update = telegram.Update.de_json(json.loads(body), application.bot)
-            asyncio.run(application.process_update(update))
-            
+            # Run the async handler
+            asyncio.run(handle_update(body))
+
             # Send a 200 OK response
             self.send_response(200)
             self.end_headers()
