@@ -234,7 +234,7 @@ async def show_order_confirmation(update, context):
     """Render order summary and present confirm/cancel buttons. Returns CONFIRM."""
     order = context.user_data.get('order', {})
 
-    description_text = f"\n📝 Description: {order.get('description','')}" if order.get('description') else ""
+    description_text = f"\n📝 Description: {escape_markdown(order.get('description',''))}" if order.get('description') else ""
 
     message_text = (
         "📋 *Order Summary*\n\n"

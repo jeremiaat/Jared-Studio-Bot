@@ -6,7 +6,6 @@ async def start(update: Update, context: CallbackContext) -> None:
     keyboard = [
         [InlineKeyboardButton("🛍️ Price List", callback_data='price_list')],
         [InlineKeyboardButton("📝 Place an Order", callback_data='order')],
-        [InlineKeyboardButton("🔒 Check Membership", callback_data='check_membership')],
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
     
@@ -39,10 +38,54 @@ async def back_to_main_menu(update: Update, context: CallbackContext) -> int:
 # This handler can be used as a fallback in other conversation handlers
 main_menu_handler = CallbackQueryHandler(back_to_main_menu, pattern="^main_menu$")
 
+# Dummy implementation (button removed, so this won't be called from start menu)
 async def check_membership(update: Update, context: CallbackContext):
-    # Dummy implementation
     pass
 
 async def check_membership_order(update: Update, context: CallbackContext):
-    # Dummy implementation
+    """Re-checks membership after user clicks 'I Joined ✅' during order process."""
+    query = update.callback_query
+    await query.answer()
+
+    user = update.effective_user
+    bot = context.application.bot
+
+    try:
+        member = await bot.get_chat_member("@Jaredrawing", user.id)
+        is_member = member.status in ["member", "administrator", "creator"]
+    except Exception as e:
+        print(f"Membership re-check failed: {e}")
+        is_member = False
+
+    if is_member:
+        # If now a member, send the size selection to restart the order process
+        context.user_data['order'] = {} # Clear any previous partial order data
+        keyboard = [
+            [InlineKeyboardButton("A4", callback_data="size_A4")],
+            [InlineKeyboardButton("A3", callback_data="size_A3")]
+        ]
+        await query.edit_message_text(
+            "✅ You are now a member! Let's continue with your order.\n\n"
+            "🎨 *Select Size*\n\nChoose the paper size for your drawing:",
+            reply_markup=InlineKeyboardMarkup(keyboard),
+            parse_mode=ParseMode.MARKDOWN
+        )
+        return ConversationHandler.END # End this specific handler's execution
+    else:
+        # Still not a member, re-prompt
+        join_url = "https://t.me/Jaredrawing"
+        keyboard = [
+            [InlineKeyboardButton("Join Channel", url=join_url)],
+            [InlineKeyboardButton("Check Membership", callback_data="check_membership_order")],
+            [InlineKeyboardButton("🏠 Main Menu", callback_data="main_menu")]
+        ]
+        await query.edit_message_text(
+            "ℹ️ You are still not a member of @Jaredrawing.\n\n"
+            "Please join the channel and try again:",
+            reply_markup=InlineKeyboardMarkup(keyboard)
+        )
+        return ConversationHandler.END # End this handler
+
+async def check_membership_order(update: Update, context: CallbackContext):
+    # This function is now fully implemented above.
     pass
