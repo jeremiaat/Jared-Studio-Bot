@@ -199,6 +199,11 @@ async def receive_picture(update, context):
     )
     return DESCRIPTION
 
+async def remind_send_photo(update, context):
+    """Remind user to send a photo if they send text in PICTURE state."""
+    await update.message.reply_text("Please send a photo of what you want drawn.")
+    return PICTURE
+
 async def enter_description(update, context):
     """Store entered description and show confirmation."""
     # Only handle textual messages in this handler
@@ -369,7 +374,10 @@ order_conversation = ConversationHandler(
         FRAME: [CallbackQueryHandler(select_frame, pattern="^frame_")],
         DELIVERY_TIME: [CallbackQueryHandler(select_delivery_time, pattern="^time_")],
         LOCATION: [MessageHandler(filters.TEXT & ~filters.COMMAND, enter_location)],
-        PICTURE: [MessageHandler(filters.PHOTO, receive_picture)],
+        PICTURE: [
+            MessageHandler(filters.PHOTO, receive_picture),
+            MessageHandler(filters.TEXT & ~filters.COMMAND, remind_send_photo)
+        ],
         DESCRIPTION: [
             MessageHandler(filters.TEXT & ~filters.COMMAND, enter_description),
             CallbackQueryHandler(skip_description, pattern="^skip_description$")
@@ -384,6 +392,7 @@ order_conversation = ConversationHandler(
         main_menu_handler # Add main menu as a fallback
     ],
     allow_reentry=True,
-    per_message=True,  # Set to True to avoid issues with CallbackQueryHandlers in states
-    per_user=True  # use per_user (or per_chat) so MessageHandler + CallbackQueryHandler can coexist
+    per_user=True,
+    per_message=False,
+    per_chat=False
 )
