@@ -251,16 +251,10 @@ async def show_order_confirmation(update, context):
         [InlineKeyboardButton("❌ Cancel", callback_data="cancel_order")]
     ]
 
-    # Prefer replying in the same context (message or callback)
+    # Send confirmation message as a new message to avoid reply issues
     try:
-        query = getattr(update, "callback_query", None)
-        if update.message:
-            await update.message.reply_text(message_text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode=ParseMode.MARKDOWN)
-        elif query and query.message:
-            await query.edit_message_text(message_text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode=ParseMode.MARKDOWN)
-        else:
-            await context.bot.send_message(chat_id=update.effective_chat.id, text=message_text,
-                                                      reply_markup=InlineKeyboardMarkup(keyboard), parse_mode=ParseMode.MARKDOWN)
+        await context.bot.send_message(chat_id=update.effective_chat.id, text=message_text,
+                                       reply_markup=InlineKeyboardMarkup(keyboard), parse_mode=ParseMode.MARKDOWN)
     except Exception as e:
         print(f"show_order_confirmation error: {e}")
 
