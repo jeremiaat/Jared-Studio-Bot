@@ -5,7 +5,7 @@ from drawings import drawings
 from utils.helpers import is_creator
 
 async def list_prices(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Open the price viewer starting at the first item (one item at a time)."""
+    """Entry point for price list. Shows the first item and enters the conversation."""
     query = update.callback_query
     user = query.from_user if query else update.effective_user
 
@@ -53,11 +53,13 @@ async def list_prices(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         except Exception:
             pass
         await _render_price(update, context, 0)
+        return "SHOW_DETAIL"
     else:
         # command /prices — show first item in chat
         await _render_price(update, context, 0, from_command=True)
+        return "SHOW_DETAIL"
 
-async def show_price_detail(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+async def show_price_detail(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Callback handler for price_{index} — show the item at that index with nav buttons."""
     query = update.callback_query
     if not query:
@@ -119,6 +121,7 @@ async def show_price_detail(update: Update, context: ContextTypes.DEFAULT_TYPE) 
         return
 
     await _render_price(update, context, index)
+    return "SHOW_DETAIL"
 
 async def _render_price(update: Update, context: ContextTypes.DEFAULT_TYPE, index: int, from_command: bool = False) -> None:
     """Internal: render a single drawing/price item with Prev/Next, Order and Main Menu buttons."""

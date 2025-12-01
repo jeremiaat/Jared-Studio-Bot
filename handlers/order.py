@@ -5,6 +5,7 @@ from telegram.constants import ParseMode
 # Import config values directly. Ensure your bot is run from the project root.
 from config import ORDER_CONTACT_CHAT_ID, ORDER_CONTACT_USERNAME, CREATOR_USER_ID
 from utils.helpers import is_creator
+from handlers.start import main_menu_handler
 import html, os, json
 
 def escape_markdown(text):
@@ -368,7 +369,7 @@ async def cancel_order(update, context):
 
 # Conversation handler (exported as `order_conversation`)
 order_conversation = ConversationHandler(
-    entry_points=[CallbackQueryHandler(start_order, pattern="^start_order$")],
+    entry_points=[CallbackQueryHandler(start_order, pattern="^order$")],
     states={
         SIZE: [CallbackQueryHandler(select_size, pattern="^size_")],
         FRAME: [CallbackQueryHandler(select_frame, pattern="^frame_")],
@@ -384,8 +385,11 @@ order_conversation = ConversationHandler(
             CallbackQueryHandler(cancel_order, pattern="^cancel_order$")
         ],
     },
-    fallbacks=[CommandHandler("cancel", cancel_order)],
+    fallbacks=[
+        CommandHandler("cancel", cancel_order),
+        main_menu_handler # Add main menu as a fallback
+    ],
     allow_reentry=True,
-    per_message=False,  # Set to False to allow MessageHandler in conversation states
+    per_message=True,  # Set to True to avoid issues with CallbackQueryHandlers in states
     per_user=True  # use per_user (or per_chat) so MessageHandler + CallbackQueryHandler can coexist
 )
