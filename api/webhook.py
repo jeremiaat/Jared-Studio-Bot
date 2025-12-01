@@ -1,34 +1,32 @@
-from telegram import Update
-from bot import application
+import asyncio
 import json
 import logging
-import asyncio
+from http.server import BaseHTTPRequestHandler
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+import telegram
 
-async def handler(event, context):
-    logger.info(f"Received event: {event['httpMethod']}")
-    if event['httpMethod'] != 'POST':
-        return {
-            'statusCode': 405,
-            'body': 'Method Not Allowed'
-        }
+# Make sure to import the application object from your bot.py
+from bot import application
 
-    try:
-        update_data = json.loads(event['body'])
-        logger.info(f"Update data: {update_data}")
-        update = Update.de_json(update_data, application.bot)
-        logger.info("Processing update...")
-        await application.process_update(update)
-        logger.info("Update processed successfully")
-        return {
-            'statusCode': 200,
-            'body': 'OK'
-        }
-    except Exception as e:
-        logger.error(f"Error processing update: {e}", exc_info=True)
-        return {
-            'statusCode': 500,
-            'body': 'Internal Server Error'
-        }
+
+class handler(BaseHTTPRequestHandler):
+    def do_POST(self):
+        """
+        Handles incoming POST requests from Telegram.
+        """
+        try:
+            # Get the request body
+            content_length = int(self.headers["Content-Length"])
+            body = self.rfile.read(content_length)
+            
+            # Parse the update and process it
+            update = telegram.Update.de_json(json.loads(body), application.bot)
+            asyncio.run(application.process_update(update))
+            
+            # Send a 200 OK response
+            self.send_response(200)
+            self.end_headers()
+        except Exception as e:
+            logging.error(f"Error processing update: {e}")
+            self.send_response(500)
+            self.end_headers()
