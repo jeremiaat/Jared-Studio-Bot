@@ -6,7 +6,14 @@ from telegram.constants import ParseMode
 from config import ORDER_CONTACT_CHAT_ID, ORDER_CONTACT_USERNAME, CREATOR_USER_ID
 from utils.helpers import is_creator
 from handlers.start import main_menu_handler
-import html, os, json
+import html, os, json, logging
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 def escape_markdown(text):
     """Escape markdown special characters"""
@@ -48,7 +55,7 @@ async def start_order(update, context):
             )
             return ConversationHandler.END
     except Exception as e:
-        print(f"[DEBUG] Error in start_order creator check: {e}")
+        logger.error(f"Error in start_order creator check: {e}")
         # Fallback to prevent creators from ordering even if check fails
         return ConversationHandler.END
 
@@ -58,7 +65,7 @@ async def start_order(update, context):
         member = await bot.get_chat_member("@Jaredrawing", user.id)
         is_member = member.status in ["member", "administrator", "creator"]
     except Exception as e:
-        print(f"Membership check failed: {e}")
+        logger.warning(f"Membership check failed for user {user.id}: {e}")
         is_member = False
 
     if not is_member:
@@ -261,7 +268,7 @@ async def show_order_confirmation(update, context):
         await context.bot.send_message(chat_id=update.effective_chat.id, text=message_text,
                                        reply_markup=InlineKeyboardMarkup(keyboard), parse_mode=ParseMode.MARKDOWN)
     except Exception as e:
-        print(f"show_order_confirmation error: {e}")
+        logger.error(f"show_order_confirmation error for chat {update.effective_chat.id}: {e}")
 
     return CONFIRM
 
@@ -315,9 +322,9 @@ async def confirm_order(update, context):
                 # Otherwise, send the order details as a text message
                 await bot.send_message(chat_id=creator_chat_id, text=order_message, parse_mode=ParseMode.HTML)
         except Exception as e:
-            print(f"Failed to send order to creator ({creator_chat_id}): {e}")
+            logger.error(f"Failed to send order to creator ({creator_chat_id}): {e}")
     else:
-        print("CREATOR_USER_ID not configured or invalid; order not forwarded.")
+        logger.warning("CREATOR_USER_ID not configured or invalid; order not forwarded.")
 
     # Continue with existing confirmation to user (keep original behavior)
     safe_contact_username = "Ja_r_ed"
@@ -340,7 +347,7 @@ async def confirm_order(update, context):
         else: # Fallback for other contexts
             await bot.send_message(chat_id=update.effective_chat.id, text=confirm_text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode=ParseMode.HTML)
     except Exception as e:
-        print(f"Failed to send confirmation to user: {e}")
+        logger.error(f"Failed to send confirmation to user {update.effective_chat.id}: {e}")
 
     # clear conversation data if desired
     context.user_data.pop('order', None)
