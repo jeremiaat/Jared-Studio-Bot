@@ -1,8 +1,11 @@
+import logging
 from pathlib import Path
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update, InputMediaPhoto
 from telegram.ext import ContextTypes
 from drawings import drawings
 from utils.helpers import is_creator
+
+logger = logging.getLogger(__name__)
 
 async def list_prices(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Entry point for price list. Shows the first item and enters the conversation."""
@@ -61,23 +64,28 @@ async def list_prices(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
 
 async def show_price_detail(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Callback handler for price_{index} — show the item at that index with nav buttons."""
+    logger.info("show_price_detail called")
     query = update.callback_query
     if not query:
+        logger.warning("No callback_query in update")
         return
     try:
         await query.answer()
-    except Exception:
-        pass
+        logger.info("Callback query answered")
+    except Exception as e:
+        logger.error(f"Failed to answer callback query: {e}")
 
     user = query.from_user
+    logger.info(f"User: {user.id if user else 'None'}")
 
     # Check if user is creator - creators cannot view price list
     try:
         if is_creator(user):
+            logger.info("User is creator, denying access")
             await query.edit_message_text("Access denied. Creators cannot view the price list.")
             return
     except Exception as e:
-        print(f"[DEBUG] Error in show_price_detail creator check: {e}")
+        logger.error(f"Error in show_price_detail creator check: {e}")
         return # Block access if check fails
 
     # Check membership for non-creators
@@ -85,11 +93,13 @@ async def show_price_detail(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         member = await bot.get_chat_member("@Jaredrawing", user.id)
         is_member = member.status in ["member", "administrator", "creator"]
+        logger.info(f"User membership status: {is_member}")
     except Exception as e:
-        print(f"Membership check failed: {e}")
+        logger.error(f"Membership check failed: {e}")
         is_member = False
 
     if not is_member:
+        logger.info("User not member, showing join prompt")
         join_url = "https://t.me/Jaredrawing"
         data = query.data or ""
         keyboard = [
@@ -104,7 +114,9 @@ async def show_price_detail(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     data = query.data or ""
+    logger.info(f"Callback data: {data}")
     if not data.startswith("price_"):
+        logger.warning(f"Invalid callback data: {data}")
         try:
             await query.edit_message_text("Unknown selection.")
         except Exception:
@@ -113,7 +125,9 @@ async def show_price_detail(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     try:
         index = int(data.split("_", 1)[1])
-    except Exception:
+        logger.info(f"Parsed index: {index}")
+    except Exception as e:
+        logger.error(f"Failed to parse index from {data}: {e}")
         try:
             await query.edit_message_text("Invalid selection.")
         except Exception:
@@ -121,6 +135,7 @@ async def show_price_detail(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     await _render_price(update, context, index)
+    logger.info("Returning SHOW_DETAIL")
     return "SHOW_DETAIL"
 
 async def _render_price(update: Update, context: ContextTypes.DEFAULT_TYPE, index: int, from_command: bool = False) -> None:
