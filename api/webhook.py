@@ -1,33 +1,48 @@
 import asyncio
 import json
 import logging
-from http.server import BaseHTTPRequestHandler
+import os
+from http.server import BaseHTTPRequestHandler, HTTPServer
 
 import telegram
+from telegram import Update
+from telegram.ext import Application, PicklePersistence
 
-# Make sure to import the application object from your bot.py
-from bot import application
+# Import your handler-adding function from bot.py
+from bot import add_handlers
 
+BOT_TOKEN = os.getenv("BOT_TOKEN")
 
-async def handle_update(body):
-    """Asynchronously initialize the application, process the update, and shut down."""
+async def handle_request(body: str):
+    """
+    Builds the application, processes a single update, and shuts down.
+    This is the serverless-friendly approach.
+    """
+    persistence = PicklePersistence(filepath="/tmp/bot_persistence")
+    
+    application = (
+        Application.builder()
+        .token(BOT_TOKEN)
+        .persistence(persistence)
+        .build()
+    )
+
+    # Add all your handlers
+    add_handlers(application)
+
     await application.initialize()
-    update = telegram.Update.de_json(json.loads(body), application.bot)
+    update = Update.de_json(json.loads(body), application.bot)
     await application.process_update(update)
     await application.shutdown()
 
 class handler(BaseHTTPRequestHandler):
     def do_POST(self):
-        """
-        Handles incoming POST requests from Telegram.
-        """
         try:
-            # Get the request body
             content_length = int(self.headers["Content-Length"])
-            body = self.rfile.read(content_length)
-            
-            # Run the async handler
-            asyncio.run(handle_update(body))
+            body = self.rfile.read(content_length).decode("utf-8")
+
+            # Process the update asynchronously
+            asyncio.run(handle_request(body))
 
             # Send a 200 OK response
             self.send_response(200)
@@ -36,3 +51,4 @@ class handler(BaseHTTPRequestHandler):
             logging.error(f"Error processing update: {e}")
             self.send_response(500)
             self.end_headers()
+            self.wfile.write(f"Error: {e}".encode("utf-8"))
