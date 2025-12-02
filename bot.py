@@ -1,6 +1,6 @@
 # bot.py
 from dotenv import load_dotenv
-from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ConversationHandler
+from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ConversationHandler, PicklePersistence
 import os
 import threading
 
@@ -32,7 +32,11 @@ if not BOT_TOKEN:
     print("Error: BOT_TOKEN not found in environment variables")
     exit(1)
 
-application = Application.builder().token(BOT_TOKEN).build()
+# Create a persistence object
+persistence = PicklePersistence(filepath="bot_persistence")
+
+# Build the application with persistence
+application = Application.builder().token(BOT_TOKEN).persistence(persistence).build()
 
 # core handlers
 application.add_handler(CommandHandler("start", start))
