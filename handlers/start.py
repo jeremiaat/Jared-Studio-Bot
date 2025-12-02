@@ -22,7 +22,6 @@ async def back_to_main_menu(update: Update, context: CallbackContext) -> int:
     keyboard = [
         [InlineKeyboardButton("🛍️ Price List", callback_data='price_list')],
         [InlineKeyboardButton("📝 Place an Order", callback_data='order')],
-        [InlineKeyboardButton("🔒 Check Membership", callback_data='check_membership')],
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
 
