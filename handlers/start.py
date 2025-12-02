@@ -3,12 +3,25 @@ from telegram.ext import CallbackContext, ConversationHandler, CallbackQueryHand
 
 async def start(update: Update, context: CallbackContext) -> None:
     """Sends a welcome message with the main menu."""
-    keyboard = [
-        [InlineKeyboardButton("🛍️ Price List", callback_data='price_list')],
-        [InlineKeyboardButton("📝 Place an Order", callback_data='order')],
-    ]
+    user = update.effective_user
+
+    # Import is_creator function
+    from utils.helpers import is_creator
+
+    if is_creator(user):
+        keyboard = [
+            [InlineKeyboardButton("🎨 Creator Panel", callback_data='creator_menu')],
+            [InlineKeyboardButton("🛍️ Price List", callback_data='price_list')],
+            [InlineKeyboardButton("📝 Place an Order", callback_data='order')],
+        ]
+    else:
+        keyboard = [
+            [InlineKeyboardButton("🛍️ Price List", callback_data='price_list')],
+            [InlineKeyboardButton("📝 Place an Order", callback_data='order')],
+        ]
+
     reply_markup = InlineKeyboardMarkup(keyboard)
-    
+
     await update.message.reply_text(
         'Welcome to Jared Studio Bot! How can I help you today?',
         reply_markup=reply_markup
