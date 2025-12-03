@@ -20,13 +20,6 @@ except Exception:
     show_price_detail = None
 
 # try importing management handlers if you have them
-try:
-    from handlers.management import view_orders_handler, update_price_handler, add_catalogue_handler
-except Exception:
-    view_orders_handler = None
-    update_price_handler = None
-    add_catalogue_handler = None
-
 # try importing creator handlers if you have them
 try:
     from handlers.creator import (
@@ -82,14 +75,6 @@ def add_handlers(application: Application):
             per_message=True
         )
         application.add_handler(price_list_conversation)
-
-    # register management handlers if available
-    if view_orders_handler:
-        application.add_handler(view_orders_handler)
-    if update_price_handler:
-        application.add_handler(update_price_handler)
-    if add_catalogue_handler:
-        application.add_handler(add_catalogue_handler)
 
     # register creator handlers if available
     if creator_menu_handler:

@@ -297,10 +297,6 @@ async def edit_field_value(update: Update, context):
     prices[item_index][field] = new_value
     save_prices(prices)
 
-    # Reload drawings to reflect changes
-    import drawings
-    drawings.drawings = drawings.load_prices()
-
     message = f"✅ Successfully updated {field}!\n\n"
     message += f"New {field}: {new_value}"
 
@@ -433,10 +429,6 @@ async def add_item_image(update: Update, context):
     prices.append(new_item)
     save_prices(prices)
 
-    # Reload drawings to reflect changes
-    import drawings
-    drawings.drawings = drawings.load_prices()
-
     message = "✅ New item added successfully!\n\n"
     message += f"🎨 Category: {new_item['category']}\n"
     message += f"📏 Size: {new_item['size']}\n"
@@ -547,10 +539,6 @@ async def execute_delete_item(update: Update, context):
 
     deleted_item = prices.pop(index)
     save_prices(prices)
-
-    # Reload drawings to reflect changes
-    import drawings
-    drawings.drawings = drawings.load_prices()
 
     message = "✅ Item deleted successfully!\n\n"
     message += f"Deleted: {deleted_item['category']} - {deleted_item['size']}"

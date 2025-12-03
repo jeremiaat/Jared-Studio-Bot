@@ -2,7 +2,7 @@ import logging
 from pathlib import Path
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update, InputMediaPhoto
 from telegram.ext import ContextTypes
-from drawings import drawings
+from drawings import load_prices
 from utils.helpers import is_creator
 
 logger = logging.getLogger(__name__)
@@ -139,6 +139,7 @@ async def show_price_detail(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def _render_price(update: Update, context: ContextTypes.DEFAULT_TYPE, index: int, from_command: bool = False) -> None:
     """Internal: render a single drawing/price item with Prev/Next, Order and Main Menu buttons."""
+    drawings = load_prices()
     if not drawings:
         target = update.callback_query.message if getattr(update, "callback_query", None) else update.effective_message
         await target.reply_text("No price entries available.")

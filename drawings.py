@@ -1,4 +1,3 @@
-# drawings.py
 import os
 import json
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
@@ -10,21 +9,16 @@ def load_prices():
     if os.path.exists(PRICES_FILE):
         try:
             with open(PRICES_FILE, 'r', encoding='utf-8') as f:
-                return json.load(f)
-        except Exception:
-            pass
-
-    return [
-        {"category": "Realistic Drawing", "price": "500-700 ETB", "size": "A4",
-         "description": "A detailed realistic drawing on A4 paper without frame",
-         "image": "https://i.postimg.cc/x8WJG3T7/2.jpg"},
-        {"category": "Realistic Drawing", "price": "1000-1400 ETB", "size": "A4",
-         "description": "A realistic drawing in A4 paper with frame",
-         "image": "https://i.postimg.cc/3NjqLjF2/commissioned-work-with-frame-mother-2.png"},   
-        {"category": "Realistic Drawing", "price": "2000-2300 ETB", "size": "A3",
-         "description": "A realistic drawing in A3 paper with frame",
-         "image": "https://i.postimg.cc/Zn0wns60/1.jpg"},
-    ]
+                prices = json.load(f)
+                # Ensure we return a list even if the file is empty or malformed
+                return prices if isinstance(prices, list) else []
+        except (json.JSONDecodeError, IOError):
+            # If file is corrupt or unreadable, return empty list
+            return []
+    # If the file doesn't exist, create it with an empty list
+    with open(PRICES_FILE, 'w', encoding='utf-8') as f:
+        json.dump([], f)
+    return []
 
 # Load drawings from storage
 drawings = load_prices()
