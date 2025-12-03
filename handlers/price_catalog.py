@@ -60,7 +60,7 @@ async def list_prices(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
     else:
         # command /prices — show first item in chat
         await _render_price(update, context, 0, from_command=True)
-        return "SHOW_DETAIL"
+        # Don't return a state for command handler
 
 async def show_price_detail(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Callback handler for price_{index} — show the item at that index with nav buttons."""

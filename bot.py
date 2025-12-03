@@ -64,9 +64,12 @@ def add_handlers(application: Application):
 
     # register price handlers if available
     if list_prices and show_price_detail:
+        # Separate command handler for /prices
+        application.add_handler(CommandHandler("prices", list_prices))
+
+        # Conversation handler for price list navigation (callback queries only)
         price_list_conversation = ConversationHandler(
             entry_points=[
-                CommandHandler("prices", list_prices),
                 CallbackQueryHandler(list_prices, pattern="^price_list$"),
             ],
             states={
