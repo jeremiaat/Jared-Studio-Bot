@@ -15,7 +15,7 @@ def load_prices():
             pass
 
     return [
-        {"category": "Realistic Drawing", "price": "400-600 ETB", "size": "A4",
+        {"category": "Realistic Drawing", "price": "500-700 ETB", "size": "A4",
          "description": "A detailed realistic drawing on A4 paper without frame",
          "image": "https://i.postimg.cc/Zn0wns60/1.jpg"},
         {"category": "Realistic Drawing", "price": "1000-1400 ETB", "size": "A4",

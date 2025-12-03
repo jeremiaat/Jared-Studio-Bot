@@ -70,11 +70,12 @@ def add_handlers(application: Application):
         # Conversation handler for price list navigation (callback queries only)
         price_list_conversation = ConversationHandler(
             entry_points=[
-                CallbackQueryHandler(list_prices, pattern="^price_list$"),
+                CallbackQueryHandler(list_prices, pattern="^price_list$"), # Starts the catalog
+                CallbackQueryHandler(show_price_detail, pattern="^price_"), # Handles Next/Prev
             ],
             states={
                 # The state where the price list is being shown and can be navigated
-                "SHOW_DETAIL": [CallbackQueryHandler(show_price_detail, pattern="^price_")],
+                "SHOW_DETAIL": [CallbackQueryHandler(show_price_detail, pattern="^price_")], # Stays in this state
             },
             fallbacks=[main_menu_handler],
             # map_to_parent is not needed here as it's a top-level conversation
