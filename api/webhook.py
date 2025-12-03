@@ -18,7 +18,7 @@ async def handle_request(body: str):
     Builds the application, processes a single update, and shuts down.
     This is the serverless-friendly approach.
     """
-    persistence = PicklePersistence(filepath="/tmp/bot_persistence")
+    persistence = PicklePersistence(filepath="/tmp/bot_persistence.pkl")
     
     application = (
         Application.builder()
