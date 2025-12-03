@@ -74,7 +74,8 @@ def add_handlers(application: Application):
                 "SHOW_DETAIL": [CallbackQueryHandler(show_price_detail, pattern="^price_")],
             },
             fallbacks=[main_menu_handler],
-            map_to_parent={ConversationHandler.END: ConversationHandler.END}
+            map_to_parent={ConversationHandler.END: ConversationHandler.END},
+            per_message=True
         )
         application.add_handler(price_list_conversation)
 

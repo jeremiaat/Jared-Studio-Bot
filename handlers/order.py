@@ -400,6 +400,6 @@ order_conversation = ConversationHandler(
     ],
     allow_reentry=True,
     per_user=True,
-    per_message=False,
+    per_message=True,
     per_chat=False
 )

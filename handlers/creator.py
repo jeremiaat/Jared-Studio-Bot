@@ -704,7 +704,7 @@ add_item_conversation = ConversationHandler(
         ADDING_ITEM_IMAGE: [MessageHandler(filters.TEXT & ~filters.COMMAND, add_item_image)],
     },
     fallbacks=[CallbackQueryHandler(lambda u, c: ConversationHandler.END, pattern="^creator_menu$")],
-    per_message=False,
+    per_message=True,
 )
 
 # Conversation handler for editing items
@@ -714,5 +714,5 @@ edit_item_conversation = ConversationHandler(
         EDITING_ITEM_VALUE: [MessageHandler(filters.TEXT & ~filters.COMMAND, edit_field_value)],
     },
     fallbacks=[CallbackQueryHandler(lambda u, c: ConversationHandler.END, pattern="^edit_catalog$")],
-    per_message=False,
+    per_message=True,
 )
