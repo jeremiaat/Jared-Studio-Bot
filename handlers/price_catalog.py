@@ -134,8 +134,7 @@ async def show_price_detail(update: Update, context: ContextTypes.DEFAULT_TYPE):
             pass
         return
 
-    await _render_price(update, context, index)
-    logger.info("Returning SHOW_DETAIL")
+    await _render_price(update, context, index) # This renders the new page
     return "SHOW_DETAIL"
 
 async def _render_price(update: Update, context: ContextTypes.DEFAULT_TYPE, index: int, from_command: bool = False) -> None:
