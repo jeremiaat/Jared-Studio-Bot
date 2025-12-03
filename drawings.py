@@ -17,10 +17,10 @@ def load_prices():
     return [
         {"category": "Realistic Drawing", "price": "500-700 ETB", "size": "A4",
          "description": "A detailed realistic drawing on A4 paper without frame",
-         "image": "https://i.postimg.cc/Zn0wns60/1.jpg"},
+         "image": "https://i.postimg.cc/x8WJG3T7/2.jpg"},
         {"category": "Realistic Drawing", "price": "1000-1400 ETB", "size": "A4",
          "description": "A realistic drawing in A4 paper with frame",
-         "image": "https://i.postimg.cc/x8WJG3T7/2.jpg"},
+         "image": "https://i.postimg.cc/3NjqLjF2/commissioned-work-with-frame-mother-2.png"},   
         {"category": "Realistic Drawing", "price": "2000-2300 ETB", "size": "A3",
          "description": "A realistic drawing in A3 paper with frame",
          "image": "https://i.postimg.cc/Zn0wns60/1.jpg"},
