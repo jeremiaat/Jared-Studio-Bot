@@ -73,11 +73,11 @@ def add_handlers(application: Application):
                 CallbackQueryHandler(list_prices, pattern="^price_list$"),
             ],
             states={
-                # Assuming show_price_detail is a state. Add more states if needed.
+                # The state where the price list is being shown and can be navigated
                 "SHOW_DETAIL": [CallbackQueryHandler(show_price_detail, pattern="^price_")],
             },
             fallbacks=[main_menu_handler],
-            map_to_parent={ConversationHandler.END: ConversationHandler.END},
+            # map_to_parent is not needed here as it's a top-level conversation
             per_message=True
         )
         application.add_handler(price_list_conversation)
