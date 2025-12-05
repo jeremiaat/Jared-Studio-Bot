@@ -249,10 +249,12 @@ async def _render_price(update: Update, context: ContextTypes.DEFAULT_TYPE, inde
 price_list_conversation = ConversationHandler(
     entry_points=[CallbackQueryHandler(list_prices, pattern="^price_list$")],
     states={
+        # State for navigating between price items
         "SHOW_DETAIL": [
             CallbackQueryHandler(show_price_detail, pattern="^price_"),
         ],
     },
+    # Fallback to return to the main menu from anywhere in the conversation
     fallbacks=[CallbackQueryHandler(back_to_main_menu, pattern="^main_menu$")],
     allow_reentry=True
 )

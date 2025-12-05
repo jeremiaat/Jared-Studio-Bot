@@ -72,8 +72,7 @@ async def start_order(update, context):
         join_url = "https://t.me/Jaredrawing"
         keyboard = [
             [InlineKeyboardButton("Join Channel", url=join_url)],
-            [InlineKeyboardButton("Check Membership", callback_data="check_membership_order")],
-            [InlineKeyboardButton("🏠 Main Menu", callback_data="main_menu")]
+            [InlineKeyboardButton("I have joined", callback_data="check_membership_order")]
         ]
         await query.edit_message_text(
             "ℹ️ You must be a member of @Jaredrawing to place orders.\n\n"

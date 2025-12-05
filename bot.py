@@ -14,10 +14,10 @@ from handlers.order import order_conversation
 
 # optional handlers (import if present)
 try:
-    from handlers.price_catalog import list_prices, show_price_detail
+    from handlers.price_catalog import list_prices, price_list_conversation
 except Exception:
     list_prices = None
-    show_price_detail = None
+    price_list_conversation = None
 
 # try importing management handlers if you have them
 # try importing creator handlers if you have them
@@ -56,24 +56,10 @@ def add_handlers(application: Application):
     application.add_handler(order_conversation)
 
     # register price handlers if available
-    if list_prices and show_price_detail:
+    if list_prices and price_list_conversation:
         # Separate command handler for /prices
         application.add_handler(CommandHandler("prices", list_prices))
-
-        # Conversation handler for price list navigation (callback queries only)
-        price_list_conversation = ConversationHandler(
-            entry_points=[
-                CallbackQueryHandler(list_prices, pattern="^price_list$"), # Starts the catalog
-                CallbackQueryHandler(show_price_detail, pattern="^price_"), # Handles Next/Prev
-            ],
-            states={
-                # The state where the price list is being shown and can be navigated
-                "SHOW_DETAIL": [CallbackQueryHandler(show_price_detail, pattern="^price_")], # Stays in this state
-            },
-            fallbacks=[main_menu_handler],
-            # map_to_parent is not needed here as it's a top-level conversation
-            per_message=True
-        )
+        # Add the conversation handler for interactive price list browsing
         application.add_handler(price_list_conversation)
 
     # register creator handlers if available
