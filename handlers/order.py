@@ -1,7 +1,7 @@
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, ReplyKeyboardRemove
 from telegram import Update
 from telegram.error import BadRequest
-from telegram.ext import ConversationHandler, CallbackQueryHandler, MessageHandler, CommandHandler, filters
+from telegram.ext import ContextTypes, ConversationHandler, CallbackQueryHandler, MessageHandler, CommandHandler, filters
 from telegram.constants import ParseMode
 # Import config values directly. Ensure your bot is run from the project root. 
 from config import ORDER_CONTACT_CHAT_ID, ORDER_CONTACT_USERNAME, CREATOR_USER_ID
