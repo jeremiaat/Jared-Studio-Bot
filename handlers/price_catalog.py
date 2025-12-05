@@ -57,7 +57,7 @@ async def list_prices(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         if query:
             try:
                 await query.answer()
-            except Exception: pass
+            except Exception: pass # noqa: E722
         return
 
     if query:
@@ -66,7 +66,7 @@ async def list_prices(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         except Exception:
             pass
         await _render_price(update, context, 0)
-        return "SHOW_DETAIL"
+        return "SHOW_DETAIL" # Return the state to enter the conversation
     else:
         # command /prices — show first item in chat
         await _render_price(update, context, 0, from_command=True)
