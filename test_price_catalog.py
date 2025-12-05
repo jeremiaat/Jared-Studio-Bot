@@ -71,7 +71,7 @@ class TestPriceCatalog(unittest.IsolatedAsyncioTestCase):
             result = await list_prices(update, self.context)
 
             self.assertEqual(result, 1)  # SHOW_DETAIL = 1
-            mock_render.assert_called_once_with(update, self.context, 0, force_new=True)
+            mock_render.assert_called_once_with(update, self.context, 0, force_new=False)
             query.answer.assert_called_once()
 
     async def test_show_price_detail_invalid_data(self):

@@ -61,8 +61,8 @@ async def list_prices(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
             await query.answer()
         except Exception:
             pass
-        # Always send a new message for price list to avoid editing issues
-        await _render_price(update, context, 0, force_new=True)
+        # Edit the existing message to show the price list
+        await _render_price(update, context, 0, force_new=False)
         return SHOW_DETAIL # Return the state to enter the conversation
     else:
         # From /prices command
