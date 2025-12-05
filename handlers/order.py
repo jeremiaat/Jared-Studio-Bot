@@ -22,7 +22,7 @@ def escape_markdown(text):
     return text.replace('*', '\\*').replace('_', '\\_').replace('[', '\\[').replace('`', '\\`')
 
 # Conversation states
-SIZE, FRAME, DELIVERY_TIME, LOCATION, PICTURE, DESCRIPTION, CONFIRM = range(7)
+CHECK_MEMBERSHIP, SIZE, FRAME, DELIVERY_TIME, LOCATION, PICTURE, DESCRIPTION, CONFIRM = range(8)
 
 ORDERS_FILE = 'orders.json'
 
@@ -79,7 +79,7 @@ async def start_order(update, context):
             "Please join the channel first:",
             reply_markup=InlineKeyboardMarkup(keyboard)
         )
-        return ConversationHandler.END
+        return CHECK_MEMBERSHIP
 
     # Initialize order data
     context.user_data['order'] = {}
@@ -103,6 +103,40 @@ async def start_order(update, context):
             raise
 
     return SIZE
+
+async def check_membership_and_start_order(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Re-checks membership and starts the order flow if successful."""
+    query = update.callback_query
+    await query.answer()
+
+    user = update.effective_user
+    bot = context.application.bot
+
+    try:
+        member = await bot.get_chat_member("@Jaredrawing", user.id)
+        is_member = member.status in ["member", "administrator", "creator"]
+    except Exception as e:
+        logger.warning(f"Membership re-check failed for user {user.id}: {e}")
+        is_member = False
+
+    if is_member:
+        context.user_data['order'] = {} # Clear any previous partial order data
+        keyboard = [
+            [InlineKeyboardButton("A4", callback_data="size_A4")],
+            [InlineKeyboardButton("A3", callback_data="size_A3")]
+        ]
+        await query.edit_message_text(
+            "✅ You are now a member! Let's continue with your order.\n\n"
+            "🎨 *Select Size*\n\nChoose the paper size for your drawing:",
+            reply_markup=InlineKeyboardMarkup(keyboard),
+            parse_mode=ParseMode.MARKDOWN
+        )
+        return SIZE
+    else:
+        # If still not a member, we can just end or re-prompt. Ending is simpler.
+        await query.edit_message_text("ℹ️ You are still not a member. Please join the channel and try again from the main menu.")
+        return ConversationHandler.END
+
 
 async def select_size(update, context):
     """Handle size selection"""
@@ -402,6 +436,7 @@ async def cancel_order(update, context):
 order_conversation = ConversationHandler(
     entry_points=[CallbackQueryHandler(start_order, pattern="^order$")],
     states={
+        CHECK_MEMBERSHIP: [CallbackQueryHandler(check_membership_and_start_order, pattern="^check_membership_order$")],
         SIZE: [CallbackQueryHandler(select_size, pattern="^size_")],
         FRAME: [CallbackQueryHandler(select_frame, pattern="^frame_")],
         DELIVERY_TIME: [CallbackQueryHandler(select_delivery_time, pattern="^time_")],

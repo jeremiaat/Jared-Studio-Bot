@@ -83,7 +83,7 @@ async def check_membership_order(update: Update, context: CallbackContext):
             reply_markup=InlineKeyboardMarkup(keyboard),
             parse_mode=ParseMode.MARKDOWN
         )
-        return ConversationHandler.END # End this specific handler's execution
+        return 0 # Corresponds to the SIZE state in order_conversation
     else:
         # Still not a member, re-prompt
         join_url = "https://t.me/Jaredrawing"
