@@ -8,6 +8,9 @@ from utils.helpers import is_creator
 
 logger = logging.getLogger(__name__)
 
+# Conversation states
+CHECK_MEMBERSHIP, SHOW_DETAIL = range(2)
+
 async def list_prices(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Entry point for price list. Shows the first item and enters the conversation."""
     query = update.callback_query
@@ -62,7 +65,7 @@ async def list_prices(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
             except Exception: pass
         return ConversationHandler.END # Explicitly end the conversation if not a member
 
-    if query:
+    if query: # From a button press
         try:
             await query.answer()
         except Exception:
@@ -70,11 +73,11 @@ async def list_prices(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         await _render_price(update, context, 0)
         return "SHOW_DETAIL" # Return the state to enter the conversation
     else:
-        # command /prices — show first item in chat
+        # From /prices command
         await _render_price(update, context, 0, from_command=True)
         return ConversationHandler.END # Command handler should end the conversation if it's not part of one.
 
-async def show_price_detail(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def show_price_detail(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     """Callback handler for price_{index} — show the item at that index with nav buttons."""
     logger.info("show_price_detail called")
     query = update.callback_query
@@ -251,12 +254,13 @@ async def _render_price(update: Update, context: ContextTypes.DEFAULT_TYPE, inde
 price_list_conversation = ConversationHandler(
     entry_points=[CallbackQueryHandler(list_prices, pattern="^price_list$")],
     states={
-        # State for navigating between price items
-        "SHOW_DETAIL": [
+        CHECK_MEMBERSHIP: [
+            CallbackQueryHandler(list_prices, pattern="^price_list$")
+        ],
+        SHOW_DETAIL: [
             CallbackQueryHandler(show_price_detail, pattern="^price_"),
         ],
     },
-    # Fallback to return to the main menu from anywhere in the conversation
     fallbacks=[CallbackQueryHandler(back_to_main_menu, pattern="^main_menu$")],
     allow_reentry=True
 )

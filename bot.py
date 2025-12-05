@@ -50,6 +50,7 @@ def add_handlers(application: Application):
     """Add all handlers to the application."""
     # core handlers
     application.add_handler(CommandHandler("start", start))
+    application.add_handler(CallbackQueryHandler(check_membership, pattern="^check_membership$"))
     application.add_handler(main_menu_handler)
     application.add_handler(order_conversation)
 
