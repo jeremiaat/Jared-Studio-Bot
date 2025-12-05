@@ -1,0 +1,23 @@
+[
+  {
+    "category": "Portrait",
+    "price": "$50",
+    "size": "8x10 inches",
+    "description": "Custom portrait drawing",
+    "image": "https://example.com/portrait.jpg"
+  },
+  {
+    "category": "Landscape",
+    "price": "$70",
+    "size": "11x14 inches",
+    "description": "Scenic landscape artwork",
+    "image": "https://example.com/landscape.jpg"
+  },
+  {
+    "category": "Abstract",
+    "price": "$60",
+    "size": "10x10 inches",
+    "description": "Modern abstract piece",
+    "image": "https://example.com/abstract.jpg"
+  }
+]

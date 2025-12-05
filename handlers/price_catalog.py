@@ -44,21 +44,12 @@ async def list_prices(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
             [InlineKeyboardButton("Join Channel", url=join_url)],
             [InlineKeyboardButton("I Joined ✅", callback_data="price_list")]
         ]
-        # Edit the message to prompt the user to join
-        try:
-            await query.message.edit_text(
-                "ℹ️ You must be a member of @Jaredrawing to view prices.\n\n"
-                "Please join the channel first:",
-                reply_markup=InlineKeyboardMarkup(keyboard)
-            )
-        except Exception as e:
-            logger.error(f"Failed to edit message for non-member: {e}")
-            # Fallback: send new message
-            await update.effective_chat.send_message(
-                "ℹ️ You must be a member of @Jaredrawing to view prices.\n\n"
-                "Please join the channel first:",
-                reply_markup=InlineKeyboardMarkup(keyboard)
-            )
+        # Always send a new message to prompt the user to join
+        await update.effective_chat.send_message(
+            "ℹ️ You must be a member of @Jaredrawing to view prices.\n\n"
+            "Please join the channel first:",
+            reply_markup=InlineKeyboardMarkup(keyboard)
+        )
         if query:
             try:
                 await query.answer()
@@ -70,7 +61,8 @@ async def list_prices(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
             await query.answer()
         except Exception:
             pass
-        await _render_price(update, context, 0)
+        # Always send a new message for price list to avoid editing issues
+        await _render_price(update, context, 0, force_new=True)
         return "SHOW_DETAIL" # Return the state to enter the conversation
     else:
         # From /prices command
@@ -152,7 +144,7 @@ async def show_price_detail(update: Update, context: ContextTypes.DEFAULT_TYPE) 
     await _render_price(update, context, index) # This renders the new page
     return "SHOW_DETAIL"
 
-async def _render_price(update: Update, context: ContextTypes.DEFAULT_TYPE, index: int, from_command: bool = False) -> None:
+async def _render_price(update: Update, context: ContextTypes.DEFAULT_TYPE, index: int, from_command: bool = False, force_new: bool = False) -> None:
     """Internal: render a single drawing/price item with Prev/Next, Order and Main Menu buttons."""
     try:
         drawings = load_prices()
@@ -201,7 +193,7 @@ async def _render_price(update: Update, context: ContextTypes.DEFAULT_TYPE, inde
             logger.warning(f"No image found for item at index {index}")
             # Send text-only version
             try:
-                if update.callback_query and update.callback_query.message:
+                if update.callback_query and update.callback_query.message and not force_new:
                     await update.callback_query.edit_message_text(caption, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode="Markdown")
                 else:
                     await update.effective_chat.send_message(caption, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode="Markdown")
@@ -212,7 +204,7 @@ async def _render_price(update: Update, context: ContextTypes.DEFAULT_TYPE, inde
 
         query = getattr(update, "callback_query", None)
         try:
-            if query and query.message:
+            if query and query.message and not force_new:
                 # try to edit existing message into a photo with the caption and nav buttons
                 media = InputMediaPhoto(media=image, caption=caption, parse_mode="Markdown")
                 try:
@@ -228,7 +220,7 @@ async def _render_price(update: Update, context: ContextTypes.DEFAULT_TYPE, inde
                     except Exception as e:
                         logger.error(f"Failed fallback photo send: {e}")
 
-            # If we get here, no callback context or editing failed - send a new photo/message
+            # If we get here, no callback context or editing failed or force_new - send a new photo/message
             if from_command and update.effective_message:
                 await update.effective_message.reply_photo(photo=image, caption=caption, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode="Markdown")
             else:
@@ -262,5 +254,6 @@ price_list_conversation = ConversationHandler(
         ],
     },
     fallbacks=[CallbackQueryHandler(back_to_main_menu, pattern="^main_menu$")],
-    allow_reentry=True
+    allow_reentry=True,
+    per_message=True
 )
