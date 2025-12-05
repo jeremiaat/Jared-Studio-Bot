@@ -213,20 +213,30 @@ async def remind_send_photo(update, context):
 
 async def enter_description(update, context):
     """Store entered description and show confirmation."""
+    logger.info("enter_description called")
     # Only handle textual messages in this handler
     if not (update.message and update.message.text):
         # Ask user to send text or use Skip (still in DESCRIPTION state)
         try:
             await update.effective_chat.send_message("Please send a text description or press Skip.")
-        except Exception:
-            pass
+        except Exception as e:
+            logger.error(f"Failed to send description prompt: {e}")
         return DESCRIPTION
 
     text = update.message.text.strip()
+    logger.info(f"Description received: '{text}'")
     context.user_data.setdefault('order', {})['description'] = text
 
     # show confirmation and advance to CONFIRM
-    return await show_order_confirmation(update, context)
+    try:
+        return await show_order_confirmation(update, context)
+    except Exception as e:
+        logger.error(f"Failed to show order confirmation: {e}")
+        try:
+            await update.effective_chat.send_message("An error occurred while processing your order. Please try again.")
+        except Exception:
+            pass
+        return ConversationHandler.END
 
 
 async def skip_description(update, context):
@@ -244,6 +254,7 @@ async def skip_description(update, context):
 
 async def show_order_confirmation(update, context):
     """Render order summary and present confirm/cancel buttons. Returns CONFIRM."""
+    logger.info("show_order_confirmation called")
     order = context.user_data.get('order', {})
 
     description_text = f"\n📝 Description: {escape_markdown(order.get('description',''))}" if order.get('description') else ""
@@ -267,10 +278,25 @@ async def show_order_confirmation(update, context):
     try:
         await context.bot.send_message(chat_id=update.effective_chat.id, text=message_text,
                                        reply_markup=InlineKeyboardMarkup(keyboard), parse_mode=ParseMode.MARKDOWN)
+        logger.info(f"Order confirmation sent to chat {update.effective_chat.id}")
+        return CONFIRM
     except Exception as e:
         logger.error(f"show_order_confirmation error for chat {update.effective_chat.id}: {e}")
-
-    return CONFIRM
+        # Fallback: try to send without markdown
+        try:
+            plain_text = message_text.replace('*', '').replace('_', '')  # Remove markdown
+            await context.bot.send_message(chat_id=update.effective_chat.id, text=plain_text,
+                                           reply_markup=InlineKeyboardMarkup(keyboard))
+            logger.info(f"Fallback order confirmation sent to chat {update.effective_chat.id}")
+            return CONFIRM
+        except Exception as e2:
+            logger.error(f"Fallback confirmation also failed for chat {update.effective_chat.id}: {e2}")
+            # Ultimate fallback: end conversation
+            try:
+                await update.effective_chat.send_message("An error occurred while processing your order. Please try again.")
+            except Exception:
+                pass
+            return ConversationHandler.END
 
 def _parse_chat_id(v):
     if v is None:
