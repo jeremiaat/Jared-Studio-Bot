@@ -12,6 +12,9 @@ class TestPriceCatalog(unittest.IsolatedAsyncioTestCase):
         self.chat = Chat(id=12345, type="private")
         self.context = MagicMock(spec=ContextTypes.DEFAULT_TYPE)
         self.context.application.bot = MagicMock()
+        member_mock = MagicMock()
+        member_mock.status = "member"
+        self.context.application.bot.get_chat_member = AsyncMock(return_value=member_mock)
 
     async def test_list_prices_non_member(self):
         """Test list_prices for non-member user"""
@@ -25,13 +28,12 @@ class TestPriceCatalog(unittest.IsolatedAsyncioTestCase):
 
         update = MagicMock(spec=Update)
         update.callback_query = query
-        update.effective_chat = self.chat
+        update.effective_chat = MagicMock(spec=Chat)
+        update.effective_chat.id = self.chat.id
+        update.effective_chat.send_message = AsyncMock()
 
         # Mock bot.get_chat_member to raise exception (non-member)
         self.context.application.bot.get_chat_member.side_effect = Exception("Not a member")
-
-        # Mock send_message
-        update.effective_chat.send_message = AsyncMock()
 
         # Call the function
         result = await list_prices(update, self.context)
@@ -55,7 +57,9 @@ class TestPriceCatalog(unittest.IsolatedAsyncioTestCase):
 
         update = MagicMock(spec=Update)
         update.callback_query = query
-        update.effective_chat = self.chat
+        update.effective_chat = MagicMock(spec=Chat)
+        update.effective_chat.id = self.chat.id
+        update.effective_chat.send_message = AsyncMock()
 
         # Mock bot.get_chat_member to return member status
         member_mock = MagicMock()
@@ -66,7 +70,7 @@ class TestPriceCatalog(unittest.IsolatedAsyncioTestCase):
         with patch('handlers.price_catalog._render_price', new_callable=AsyncMock) as mock_render:
             result = await list_prices(update, self.context)
 
-            self.assertEqual(result, "SHOW_DETAIL")
+            self.assertEqual(result, 1)  # SHOW_DETAIL = 1
             mock_render.assert_called_once_with(update, self.context, 0, force_new=True)
             query.answer.assert_called_once()
 
@@ -102,9 +106,10 @@ class TestPriceCatalog(unittest.IsolatedAsyncioTestCase):
 
         update.callback_query.message.reply_text = AsyncMock()
 
-        await _render_price(update, self.context, 0)
+        with patch('handlers.price_catalog.load_prices', return_value=[]):
+            await _render_price(update, self.context, 0)
 
-        update.callback_query.message.reply_text.assert_called_once_with("No price entries available.")
+            update.callback_query.message.reply_text.assert_called_once_with("No price entries available.")
 
     async def test_render_price_with_drawings(self):
         """Test _render_price when drawings are available"""

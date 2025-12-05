@@ -63,7 +63,7 @@ async def list_prices(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
             pass
         # Always send a new message for price list to avoid editing issues
         await _render_price(update, context, 0, force_new=True)
-        return "SHOW_DETAIL" # Return the state to enter the conversation
+        return SHOW_DETAIL # Return the state to enter the conversation
     else:
         # From /prices command
         await _render_price(update, context, 0, from_command=True)
@@ -142,7 +142,7 @@ async def show_price_detail(update: Update, context: ContextTypes.DEFAULT_TYPE) 
         return
 
     await _render_price(update, context, index) # This renders the new page
-    return "SHOW_DETAIL"
+    return SHOW_DETAIL
 
 async def _render_price(update: Update, context: ContextTypes.DEFAULT_TYPE, index: int, from_command: bool = False, force_new: bool = False) -> None:
     """Internal: render a single drawing/price item with Prev/Next, Order and Main Menu buttons."""
@@ -227,6 +227,17 @@ async def _render_price(update: Update, context: ContextTypes.DEFAULT_TYPE, inde
                 await update.effective_chat.send_photo(photo=image, caption=caption, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode="Markdown")
         except Exception as e:
             logger.error(f"Failed to send photo message: {e}")
+            # Check if it's an invalid image URL error - fall back to text immediately
+            if "Wrong type of the web page content" in str(e) or "Bad Request" in str(e):
+                logger.info("Invalid image URL detected, falling back to text-only display")
+                try:
+                    if query and query.message and not force_new:
+                        await query.edit_message_text(caption, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode="Markdown")
+                    else:
+                        await update.effective_chat.send_message(caption, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode="Markdown")
+                    return
+                except Exception as e2:
+                    logger.error(f"Failed text-only fallback after invalid image: {e2}")
             # last resort: send text-only with nav buttons
             try:
                 if query and query.message:
@@ -255,5 +266,5 @@ price_list_conversation = ConversationHandler(
     },
     fallbacks=[CallbackQueryHandler(back_to_main_menu, pattern="^main_menu$")],
     allow_reentry=True,
-    per_message=True
+    per_user=True
 )
