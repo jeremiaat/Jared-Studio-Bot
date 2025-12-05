@@ -422,10 +422,9 @@ order_conversation = ConversationHandler(
     },
     fallbacks=[
         CommandHandler("cancel", cancel_order),
-        main_menu_handler # Add main menu as a fallback
+        CallbackQueryHandler(cancel_order, pattern="^cancel_order$"),
+        CallbackQueryHandler(back_to_main_menu, pattern="^main_menu$"),
     ],
     allow_reentry=True,
     per_user=True,
-    per_message=True,
-    per_chat=False
 )

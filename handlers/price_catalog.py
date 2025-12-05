@@ -1,7 +1,8 @@
 import logging
 from pathlib import Path
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update, InputMediaPhoto
-from telegram.ext import ContextTypes
+from telegram.ext import ContextTypes, ConversationHandler, CallbackQueryHandler
+from handlers.start import back_to_main_menu
 from drawings import load_prices
 from utils.helpers import is_creator
 
@@ -244,3 +245,14 @@ async def _render_price(update: Update, context: ContextTypes.DEFAULT_TYPE, inde
             await update.effective_chat.send_message("An error occurred while loading the price list. Please try again.")
         except Exception:
             pass
+
+price_list_conversation = ConversationHandler(
+    entry_points=[CallbackQueryHandler(list_prices, pattern="^price_list$")],
+    states={
+        "SHOW_DETAIL": [
+            CallbackQueryHandler(show_price_detail, pattern="^price_"),
+        ],
+    },
+    fallbacks=[CallbackQueryHandler(back_to_main_menu, pattern="^main_menu$")],
+    allow_reentry=True
+)

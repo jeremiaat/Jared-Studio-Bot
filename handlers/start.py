@@ -96,8 +96,3 @@ async def check_membership_order(update: Update, context: CallbackContext):
             "Please join the channel and try again:",
             reply_markup=InlineKeyboardMarkup(keyboard)
         )
-        return ConversationHandler.END # End this handler
-
-async def check_membership_order(update: Update, context: CallbackContext):
-    # This function is now fully implemented above.
-    pass
