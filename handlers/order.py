@@ -1,4 +1,5 @@
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, ReplyKeyboardRemove
+from telegram import Update
 from telegram.error import BadRequest
 from telegram.ext import ConversationHandler, CallbackQueryHandler, MessageHandler, CommandHandler, filters
 from telegram.constants import ParseMode
