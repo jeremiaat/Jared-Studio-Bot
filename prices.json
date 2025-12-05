@@ -1,23 +1,23 @@
 [
   {
     "category": "Portrait",
-    "price": "$50",
-    "size": "8x10 inches",
-    "description": "Custom portrait drawing",
-    "image": "https://example.com/portrait.jpg"
+    "price": "400-500 ETB",
+    "size": "A4 Size",
+    "description": "Custom realistic portrait drawing without frame",
+    "image": "https://i.postimg.cc/x8WJG3T7/2.jpg"
   },
   {
-    "category": "Landscape",
-    "price": "$70",
-    "size": "11x14 inches",
-    "description": "Scenic landscape artwork",
-    "image": "https://example.com/landscape.jpg"
+    "category": "Portrait",
+    "price": "1000-1,500 ETB",
+    "size": "A4 Size",
+    "description": "Custom realistic portrait drawing with frame",
+    "image": "https://i.postimg.cc/3NjqLjF2/commissioned_work_with_frame_mother_2.png"
   },
   {
     "category": "Abstract",
-    "price": "$60",
-    "size": "10x10 inches",
-    "description": "Modern abstract piece",
-    "image": "https://example.com/abstract.jpg"
+    "price": "2000-2,500 ETB",
+    "size": "A3 Size",
+    "description": "Custom realistic portrait drawing with frame",
+    "image": "https://i.postimg.cc/Zn0wns60/1.jpg"
   }
 ]
