@@ -17,11 +17,13 @@ async def list_prices(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
     try:
         if is_creator(user):
             target = query.message if query else update.effective_message
-            await target.reply_text("Access denied. Creators cannot view the price list.")
-            return
+            if target:
+                await target.reply_text("Access denied. Creators cannot view the price list.")
+            logger.info(f"User {user.id} is creator, denying price list access.")
+            return ConversationHandler.END
     except Exception as e:
         logger.error(f"Error in list_prices creator check: {e}")
-        return # Block access if check fails
+        return ConversationHandler.END # Block access if check fails
 
     # Check channel membership for non-creators
     bot = context.application.bot
@@ -57,8 +59,8 @@ async def list_prices(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         if query:
             try:
                 await query.answer()
-            except Exception: pass # noqa: E722
-        return
+            except Exception: pass
+        return ConversationHandler.END # Explicitly end the conversation if not a member
 
     if query:
         try:
@@ -70,7 +72,7 @@ async def list_prices(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
     else:
         # command /prices — show first item in chat
         await _render_price(update, context, 0, from_command=True)
-        # Don't return a state for command handler
+        return ConversationHandler.END # Command handler should end the conversation if it's not part of one.
 
 async def show_price_detail(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Callback handler for price_{index} — show the item at that index with nav buttons."""

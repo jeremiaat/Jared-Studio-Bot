@@ -141,6 +141,7 @@ async def check_membership_and_start_order(update: Update, context: ContextTypes
 
 async def select_size(update, context):
     """Handle size selection"""
+    logger.info("select_size called")
     query = update.callback_query
     await query.answer()
 
@@ -162,6 +163,7 @@ async def select_size(update, context):
 
 async def select_frame(update, context):
     """Handle frame selection"""
+    logger.info("select_frame called")
     query = update.callback_query
     await query.answer()
 
