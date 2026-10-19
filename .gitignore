@@ -9,3 +9,7 @@ tg-bot/  # Your virtual environment folder
 .env.local
 config.py
 *TOKEN*
+
+# Exclude local bot state
+bot_persistence
+bot_persistence*
