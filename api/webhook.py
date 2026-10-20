@@ -3,6 +3,11 @@
 The bot is normally run as a polling worker (see bot.py). On Vercel the bot is
 driven by Telegram instead: Telegram POSTs every update to this function.
 
+Endpoints
+---------
+GET  /api/webhook  -> deployment diagnostics (bot, webhook status, config)
+POST /api/webhook  -> Telegram update delivery
+
 After deploying, register the webhook once:
 
     python scripts/set_webhook.py https://<your-deployment>.vercel.app/api/webhook
@@ -13,11 +18,12 @@ import logging
 import os
 from http.server import BaseHTTPRequestHandler
 
-from telegram import Update
+from telegram import Bot, Update
 from telegram.ext import Application, PicklePersistence
 
 # Import your handler-adding function from bot.py
 from bot import add_handlers
+from config import CREATOR_USER_ID, CREATOR_USER_IDS, CREATOR_USERNAMES, ORDER_CONTACT_CHAT_ID
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("webhook")
@@ -57,6 +63,48 @@ async def handle_request(body: str) -> None:
         await application.shutdown()
 
 
+async def diagnostics() -> dict:
+    """Collects the state you need to verify a deployment from a browser."""
+    report = {
+        "status": "ok",
+        "env": {
+            "BOT_TOKEN": bool(BOT_TOKEN),
+            "WEBHOOK_SECRET": bool(WEBHOOK_SECRET),
+            "CREATOR_USER_ID": CREATOR_USER_ID,
+            "CREATOR_USER_IDS": CREATOR_USER_IDS,
+            "CREATOR_USERNAMES": CREATOR_USERNAMES,
+            "ORDER_CONTACT_CHAT_ID": ORDER_CONTACT_CHAT_ID,
+        },
+    }
+
+    try:
+        async with Bot(BOT_TOKEN) as bot:
+            me = await bot.get_me()
+            report["bot"] = {
+                "id": me.id,
+                "username": me.username,
+                "name": me.first_name,
+            }
+            hook = await bot.get_webhook_info()
+            report["webhook"] = {
+                "url": hook.url,
+                "pending_update_count": hook.pending_update_count,
+                "last_error_message": hook.last_error_message,
+                "last_error_date": hook.last_error_date,
+            }
+    except Exception as e:
+        report["status"] = "error"
+        report["error"] = str(e)
+
+    try:
+        from drawings import drawings
+        report["price_items"] = len(drawings)
+    except Exception as e:
+        report["price_items"] = f"unavailable: {e}"
+
+    return report
+
+
 class handler(BaseHTTPRequestHandler):
     protocol_version = "HTTP/1.1"
 
@@ -69,8 +117,13 @@ class handler(BaseHTTPRequestHandler):
         self.wfile.write(body)
 
     def do_GET(self) -> None:
-        """Health check so you can confirm the function is live."""
-        self._respond(200, "Jared Studio Bot webhook is running.\n")
+        """Diagnostics, so you can confirm the deployment without reading logs."""
+        try:
+            info = asyncio.run(diagnostics())
+            self._respond(200, json.dumps(info, indent=2))
+        except Exception as e:
+            logger.exception("Error building diagnostics")
+            self._respond(500, json.dumps({"status": "error", "error": str(e)}, indent=2))
 
     def do_POST(self) -> None:
         if WEBHOOK_SECRET:
